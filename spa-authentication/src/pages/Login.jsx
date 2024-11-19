@@ -19,7 +19,7 @@ const Login = () => {
         path: ["password_confirmation"],
     });
 
-    const { register, clearErrors, reset, handleSubmit, formState: { errors } } = useForm({
+    const { register, clearErrors, reset, setError, handleSubmit, formState: { errors } } = useForm({
         mode: 'all',
         resolver: zodResolver(schema),
     });
@@ -49,6 +49,7 @@ const Login = () => {
             console.error('Login error:', error.response ? error.response.data : error.message);
             if (error.response?.data?.message === "These credentials do not match our records.") {
                 setError('email', { type: 'manual', message: 'These credentials do not match our records.' });
+                setError('password', { type: 'manual', message: 'These credentials do not match our records.' });
             }
         }
     }

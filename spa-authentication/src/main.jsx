@@ -7,12 +7,14 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { initializeCsrf } from './lib/axios.js';
 import { Navigate, Outlet } from "react-router-dom";
 
+
 const csrfCookieExists = () => {
     return document.cookie.split("; ").some((cookie) => cookie.startsWith("XSRF-TOKEN="));
 };
 
 if (!csrfCookieExists()) {
     initializeCsrf();
+    localStorage.removeItem('authUser');
 }
 
 
