@@ -1,5 +1,5 @@
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,Link } from 'react-router-dom';
 import { axios } from '../lib/axios';
 
 const SideNav = () => {
@@ -40,17 +40,17 @@ const SideNav = () => {
             <div className="menu-inner-shadow"></div>
             <ul className="menu-inner py-1">
                 <li className="menu-item">
-                    <a href="#" className="menu-link">
+                    <Link to="/" className="menu-link">
                         <i className="menu-icon tf-icons bx bx-home-circle"></i>
                         <div data-i18n="Home">Home</div>
-                    </a>
+                    </Link>
                 </li>
 
                 <li className="menu-item">
-                    <a href="#" className="menu-link">
-                        <i className="menu-icon tf-icons bx bx-mail-send"></i>
-                        <div data-i18n="Inbox">Inbox</div>
-                    </a>
+                    <Link to="/users" className="menu-link">
+                        <i className="menu-icon tf-icons bx bx-user"></i>
+                        <div data-i18n="Users">Users</div>
+                    </Link>
                 </li>
                 <li className="menu-item">
                     <a href="#" className="menu-link">

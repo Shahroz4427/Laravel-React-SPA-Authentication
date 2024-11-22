@@ -6,6 +6,7 @@ import Register from './pages/Register.jsx';
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { initializeCsrf } from './lib/axios.js';
 import { Navigate, Outlet } from "react-router-dom";
+import Users from './pages/Users.jsx';
 
 
 const csrfCookieExists = () => {
@@ -13,8 +14,8 @@ const csrfCookieExists = () => {
 };
 
 if (!csrfCookieExists()) {
-    initializeCsrf();
     localStorage.removeItem('authUser');
+    initializeCsrf();
 }
 
 
@@ -46,6 +47,13 @@ const router = createBrowserRouter([
         element: <ProtectedRoute />,
         children: [
             { path: "/", element: <Home /> },
+        ],
+    },
+    {
+        path: "/users",
+        element: <ProtectedRoute />,
+        children: [
+            { path: "/users", element: <Users /> },
         ],
     },
     {
