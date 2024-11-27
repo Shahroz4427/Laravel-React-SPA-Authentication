@@ -3,9 +3,50 @@
 namespace App\Services;
 
 use App\Models\Customer;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\Request;
 
 class CustomerService
 {
+
+    public function searchQuery(Request $request): LengthAwarePaginator
+    {
+        $search = trim($request->get('search'));
+        $searchPattern = '%' . $search . '%';
+        return Customer::query()
+            ->when($search, function ($query) use ($searchPattern) {
+                $query->where('id', 'like', $searchPattern)
+                    ->orWhere('name', 'like', $searchPattern)
+                    ->orWhere('username', 'like', $searchPattern)
+                    ->orWhere('email', 'like', $searchPattern)
+                    ->orWhere('phone', 'like', $searchPattern)
+                    ->orWhere('website', 'like', $searchPattern)
+                    ->orWhereHas('address', function ($query) use ($searchPattern) {
+                        $query->where(function ($query) use ($searchPattern) {
+                            $query->where('street', 'like', $searchPattern)
+                                ->orWhere('suite', 'like', $searchPattern)
+                                ->orWhere('city', 'like', $searchPattern)
+                                ->orWhere('zipcode', 'like', $searchPattern);
+                        });
+                    })
+                    ->orWhereHas('address.geo', function ($query) use ($searchPattern) {
+                        $query->where('lat', 'like', $searchPattern)
+                            ->orWhere('lng', 'like', $searchPattern);
+                    })
+                    ->orWhereHas('company', function ($query) use ($searchPattern) {
+                        $query->where(function ($query) use ($searchPattern) {
+                            $query->where('name', 'like', $searchPattern)
+                                ->orWhere('catch_phrase', 'like', $searchPattern)
+                                ->orWhere('bs', 'like', $searchPattern);
+                        });
+                    });
+            })
+            ->with(['address', 'company', 'address.geo'])
+            ->orderBy('id', 'desc')
+            ->paginate($request->get('perPage'))
+            ->withQueryString();
+    }
+
 
     public function createCustomer(array $validatedData): Customer
     {
@@ -31,7 +72,7 @@ class CustomerService
 
         $customer->company()->create([
             'name' => $validatedData['company']['name'],
-            'catch_phrase' => $validatedData['company']['catch_phrase'],
+            'catch_phrase' => $validatedData['company']['catchPhrase'],
             'bs' => $validatedData['company']['bs']
         ]);
 
@@ -70,7 +111,7 @@ class CustomerService
         if (isset($validatedData['company'])) {
             $customer->company()->updateOrCreate([], [
                 'name' => $validatedData['company']['name'] ?? $customer->company->name,
-                'catch_phrase' => $validatedData['company']['catch_phrase'] ?? $customer->company->catch_phrase,
+                'catch_phrase' => $validatedData['company']['catchPhrase'] ?? $customer->company->catch_phrase,
                 'bs' => $validatedData['company']['bs'] ?? $customer->company->bs
             ]);
         }

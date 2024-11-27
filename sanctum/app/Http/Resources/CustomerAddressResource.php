@@ -5,6 +5,12 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @property mixed $street
+ * @property mixed $suite
+ * @property mixed $city
+ * @property mixed $zipcode
+ */
 class CustomerAddressResource extends JsonResource
 {
     /**
@@ -14,6 +20,12 @@ class CustomerAddressResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'street' => $this->street,
+            'suite' => $this->suite,
+            'city' => $this->city,
+            'zipcode' => $this->zipcode,
+            'geo' => new CustomerGeoResource($this->whenLoaded('geo'))
+        ];
     }
 }

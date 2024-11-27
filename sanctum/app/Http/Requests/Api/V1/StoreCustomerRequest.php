@@ -34,7 +34,7 @@ class StoreCustomerRequest extends FormRequest
             'phone' => 'required|string|max:255',
             'website' => 'required|string|max:255',
             'company.name' => 'required|string|max:255',
-            'company.catch_phrase' => 'required|string|max:255',
+            'company.catchPhrase' => 'required|string|max:255',
             'company.bs' => 'required|string|max:255',
         ];
     }

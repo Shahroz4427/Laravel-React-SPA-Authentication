@@ -3,10 +3,12 @@ import { createRoot } from 'react-dom/client'
 import Home from './pages/Home.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
+import Users from './pages/Users.jsx';
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { initializeCsrf } from './lib/axios.js';
 import { Navigate, Outlet } from "react-router-dom";
-import Users from './pages/Users.jsx';
+import { QueryClient, QueryClientProvider, } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 
 const csrfCookieExists = () => {
@@ -82,10 +84,10 @@ const router = createBrowserRouter([
     },
 });
 
-
+const queryClient = new QueryClient();
 
 createRoot(document.getElementById('root')).render(
-    <StrictMode>
+    <QueryClientProvider client={queryClient}>
         <RouterProvider
             router={router}
             future={{
@@ -98,6 +100,7 @@ createRoot(document.getElementById('root')).render(
                 v7_partialHydration: true,
             }}
         />
-    </StrictMode>
+        <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
 
 );

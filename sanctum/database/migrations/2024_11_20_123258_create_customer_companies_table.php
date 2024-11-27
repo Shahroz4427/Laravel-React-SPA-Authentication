@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('customer_companies', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('customer_address_id');
-            $table->foreign('customer_address_id')->references('id')->on('customer_addresses')->onDelete('cascade');
-            $table->string('lat');
-            $table->string('lng');
+            $table->unsignedBigInteger('customer_id');
+            $table->foreign('customer_id')->references('id')->on('customers')->onDelete('cascade');
+            $table->string('name');
+            $table->string('catch_phrase');
+            $table->string('bs');
             $table->timestamps();
         });
     }

@@ -5,6 +5,10 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @property mixed $lat
+ * @property mixed $lng
+ */
 class CustomerGeoResource extends JsonResource
 {
     /**
@@ -14,6 +18,9 @@ class CustomerGeoResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'lat'=>$this->lat,
+            'lng'=>$this->lng
+        ];
     }
 }

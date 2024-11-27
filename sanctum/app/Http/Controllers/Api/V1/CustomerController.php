@@ -23,9 +23,9 @@ class CustomerController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): CustomerCollection
+    public function index(Request $request): CustomerCollection
     {
-        return new CustomerCollection(Customer::with(['address', 'company', 'address.geo'])->paginate());
+        return new CustomerCollection($this->customerService->searchQuery($request));
     }
 
     /**

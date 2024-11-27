@@ -47,7 +47,7 @@ const SideNav = () => {
                 </li>
 
                 <li className="menu-item">
-                    <Link to="/users" className="menu-link">
+                    <Link to="/users" className="menu-link active">
                         <i className="menu-icon tf-icons bx bx-user"></i>
                         <div data-i18n="Users">Users</div>
                     </Link>
