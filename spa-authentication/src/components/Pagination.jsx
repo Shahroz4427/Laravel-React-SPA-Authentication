@@ -6,7 +6,7 @@ const Pagination = ({ pagelinks = [], activeLink, last_page, moveToLastPage, mov
         }
         return (
             <li key={index} className={link.active ? 'page-item active' : 'page-item'}>
-                <button type="button" onClick={() => activeLink(parseInt(link.label, 10))} className="page-link">
+                <button onClick={() => activeLink(parseInt(link.label, 10))} className="page-link">
                     {link.label}
                 </button>
             </li>
@@ -20,18 +20,18 @@ const Pagination = ({ pagelinks = [], activeLink, last_page, moveToLastPage, mov
                     <div className="demo-inline-spacing">
                         <nav aria-label="Page navigation">
                             <ul className="pagination">
-                                <li className="page-item first mx-sm-n2">
-                                    <button onClick={() => moveToFirstPage()} className="page-link" ><i className="tf-icon bx bx-chevrons-left"></i></button>
+                                <li className="page-item first">
+                                    <button onClick={() => moveToFirstPage()} className="page-link first" ><i className="tf-icon bx bx-chevrons-left"></i></button>
                                 </li>
-                                <li>
-                                    <button onClick={() => moveToPrePage()} className="page-link mx-0" >Previous</button>
+                                <li className="page-item prev">
+                                    <button onClick={() => moveToPrePage()} className="page-link prev" ><i className="tf-icon bx bx-chevron-left"></i></button>
                                 </li>
                                 {links}
-                                <li>
-                                    <button onClick={() => moveToNextPage()} className="page-link mx-1" >Next</button>
+                                <li className="page-item next">
+                                    <button onClick={() => moveToNextPage()} className="page-link next"><i className="tf-icon bx bx-chevron-right"></i></button>
                                 </li>
-                                <li className="page-item last mx-sm-n2">
-                                    <button onClick={() => moveToLastPage(last_page)} className="page-link" ><i className="tf-icon bx bx-chevrons-right"></i></button>
+                                <li className="page-item last">
+                                    <button onClick={() => moveToLastPage(last_page)} className="page-link last" ><i className="tf-icon bx bx-chevrons-right"></i></button>
                                 </li>
                             </ul>
                         </nav>

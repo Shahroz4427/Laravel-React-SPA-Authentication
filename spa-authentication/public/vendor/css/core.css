@@ -3899,7 +3899,7 @@ textarea.form-control-lg {
 }
 
 .card-footer {
-  padding: 1.5rem 1.5rem;
+  padding: 0.5rem 0.5rem;
   background-color: transparent;
   border-top: 0 solid #d9dee3;
 }
@@ -6228,7 +6228,7 @@ a.invert-bg-dark:hover, a.invert-bg-dark:focus {
   letter-spacing: 1px;
 }
 .table:not(.table-dark) th {
-  color: #566a7f;
+  color: #ffffff;
 }
 
 .table-border-bottom-0 tr:last-child td,

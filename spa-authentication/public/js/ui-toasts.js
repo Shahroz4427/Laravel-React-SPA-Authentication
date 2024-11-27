@@ -1,1 +1,39 @@
-"use strict";!function(){let e=document.querySelector(".toast-placement-ex"),t=document.querySelector("#showToastPlacement"),s,l,o;t&&(t.onclick=function(){if(o){var t;(t=o)&&null!==t._element&&(e&&(e.classList.remove(s),DOMTokenList.prototype.remove.apply(e.classList,l)),t.dispose())}s=document.querySelector("#selectTypeOpt").value,l=document.querySelector("#selectPlacement").value.split(" "),e.classList.add(s),DOMTokenList.prototype.add.apply(e.classList,l),(o=new bootstrap.Toast(e)).show()})}();
+/**
+ * UI Toasts
+ */
+
+'use strict';
+
+(function () {
+  // Bootstrap toasts example
+  // --------------------------------------------------------------------
+  const toastPlacementExample = document.querySelector('.toast-placement-ex'),
+    toastPlacementBtn = document.querySelector('#showToastPlacement');
+  let selectedType, selectedPlacement, toastPlacement;
+
+  // Dispose toast when open another
+  function toastDispose(toast) {
+    if (toast && toast._element !== null) {
+      if (toastPlacementExample) {
+        toastPlacementExample.classList.remove(selectedType);
+        DOMTokenList.prototype.remove.apply(toastPlacementExample.classList, selectedPlacement);
+      }
+      toast.dispose();
+    }
+  }
+  // Placement Button click
+  if (toastPlacementBtn) {
+    toastPlacementBtn.onclick = function () {
+      if (toastPlacement) {
+        toastDispose(toastPlacement);
+      }
+      selectedType = document.querySelector('#selectTypeOpt').value;
+      selectedPlacement = document.querySelector('#selectPlacement').value.split(' ');
+
+      toastPlacementExample.classList.add(selectedType);
+      DOMTokenList.prototype.add.apply(toastPlacementExample.classList, selectedPlacement);
+      toastPlacement = new bootstrap.Toast(toastPlacementExample);
+      toastPlacement.show();
+    };
+  }
+})();

@@ -694,3 +694,20 @@ div.dt-buttons .dt-button {
     box-shadow: 0 0.125rem 0.25rem 0 rgba(133,146,163,.4) !important;
     transform: translateY(-1px) !important;
 }
+
+.skeleton-row {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    height: 46px;
+    border-radius: 4px;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}

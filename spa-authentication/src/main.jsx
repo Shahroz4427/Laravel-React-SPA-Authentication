@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import Home from './pages/Home.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
-import Users from './pages/Users.jsx';
+import Customers from './pages/Customers.jsx';
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { initializeCsrf } from './lib/axios.js';
 import { Navigate, Outlet } from "react-router-dom";
@@ -52,10 +52,10 @@ const router = createBrowserRouter([
         ],
     },
     {
-        path: "/users",
+        path: "/customers",
         element: <ProtectedRoute />,
         children: [
-            { path: "/users", element: <Users /> },
+            { path: "/customers", element: <Customers /> },
         ],
     },
     {
