@@ -3,20 +3,25 @@ import { useReducer, useState } from "react";
 import paginationReducer from "../reducers/paginationReducer";
 import CustomersService from "../services/CustomersService";
 import Pagination from "../components/Pagination";
+import ActionsDropDown from "../components/ActionsDropDown";
+import SortableHeader from "../components/SortableHeader";
 import '../table.css'
 
 const Customers = () => {
 
     const [search, setSearch] = useState("")
-
-    const [perPage, setPage] = useState("5");
-
+    const [perPage, setPage] = useState("10");
     const [paginationState, dispatchPagination] = useReducer(paginationReducer, { activePage: 1 });
+    const [specificSearch, setSpecificSearch] = useState({ name: "", email: "", phone: "" })
 
-    const { data, isLoading, isFetching, isError } = CustomersService.fetchCustomers({
-        search,
+
+
+    const { data, isLoading } = CustomersService.fetchCustomers({
+        ...(search && { 'filter[search]': search }),
         perPage,
         page: paginationState.activePage,
+        include: 'customerAddress,customerCompany',
+        ...(!search && { 'filter[name]': specificSearch.name, 'filter[email]': specificSearch.email }),
     });
 
     const handlePrePage = () => {
@@ -33,33 +38,69 @@ const Customers = () => {
 
     const handleSetPage = (page) => dispatchPagination({ type: 'SetPage', page });
 
+    const handleSort = (order,name) => {
+        console.log(`Sorting in order: ${order} for ${name}`);
+    };
+
+
 
     return (
         <Layout>
             <div className="card">
                 <div className="card-header">
                     <h5 className="card-title">CUSTOMERS</h5>
+                    <div className="row mx-2 align-items-center">
+                        <div className="col-12 col-sm-6 col-md-2 mb-3 mb-md-0">
+                            <div className="dataTables_length">
+                                <select className="form-select" onChange={(e) => setPage(e.target.value)} value={perPage}>
+                                    <option value="5">5</option>
+                                    <option value="10">10</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div className="col-12 col-sm-6 col-md-10">
+                            <div className="d-flex flex-column flex-sm-row flex-wrap flex-md-nowrap justify-content-between align-items-start align-items-sm-center">
+                                <div className="dataTables_filter flex-grow-1 mb-3 mb-sm-0 me-sm-3">
+                                    <input
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        type="search"
+                                        className="form-control"
+                                        placeholder="Search..."
+                                        aria-label="Search"
+                                    />
+                                </div>
+                                <div className="dt-buttons">
+                                    <button className="btn btn-primary d-flex align-items-center justify-content-center">
+                                        <i className="bx bx-plus me-2"></i>
+                                        <span className="d-none d-sm-inline">New Customer</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div className="table-responsive text-nowrap">
                     <table className="table">
                         <thead className="table-dark">
                             <tr>
-                                <th>name</th>
-                                <th>email</th>
-                                <th>city</th>
-                                <th>zipcode</th>
-                                <th>phone</th>
-                                <th>company</th>
-                                <th>actions</th>
+                                <SortableHeader name="Name" onSort={handleSort} />
+                                <SortableHeader name="Email" onSort={handleSort} />
+                                <SortableHeader name="City" onSort={handleSort} />
+                                <SortableHeader name="Zipcode" onSort={handleSort} />
+                                <SortableHeader name="Phone" onSort={handleSort} />
+                                <SortableHeader name="Company" onSort={handleSort} />
+                                <th className="px-4 py-2 text-left">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>
-                                    <input type="search" className="form-control" placeholder="Search" />
+                                    <input onChange={(e) => setSpecificSearch({ ...specificSearch, name: e.target.value })} type="search" className="form-control" placeholder="Search" />
                                 </td>
                                 <td>
-                                    <input type="search" className="form-control" placeholder="Search" />
+                                    <input onChange={(e) => setSpecificSearch({ ...specificSearch, email: e.target.value })} type="search" className="form-control" placeholder="Search" />
                                 </td>
                             </tr>
                             {isLoading ? (
@@ -83,26 +124,7 @@ const Customers = () => {
                                         <td>{customer.address.zipcode}</td>
                                         <td>{customer.phone}</td>
                                         <td>{customer.company.name}</td>
-                                        <td>
-                                            <div className="dropdown">
-                                                <button
-                                                    type="button"
-                                                    className="btn p-0 dropdown-toggle hide-arrow"
-                                                    data-bs-toggle="dropdown"
-                                                    aria-expanded="false"
-                                                >
-                                                    <i className="bx bx-dots-vertical-rounded"></i>
-                                                </button>
-                                                <div className="dropdown-menu">
-                                                    <a className="dropdown-item">
-                                                        <i className="bx bx-edit-alt me-1"></i> Edit
-                                                    </a>
-                                                    <a className="dropdown-item">
-                                                        <i className="bx bx-trash me-1"></i> Delete
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </td>
+                                        <td><ActionsDropDown /></td>
                                     </tr>
                                 ))
                             )}
