@@ -25,7 +25,7 @@ class CustomerController extends Controller
      */
     public function index(Request $request): CustomerCollection
     {
-        return new CustomerCollection($this->customerService->searchQuery($request));
+        return new CustomerCollection($this->customerService->searchQuery($request->get('perPage')));
     }
 
     /**

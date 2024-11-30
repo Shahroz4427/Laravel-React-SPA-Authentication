@@ -19,7 +19,7 @@ class CustomerAddress extends Model
     ];
 
 
-    public function geo(): HasOne
+    public function CustomerGeo(): HasOne
     {
         return $this->hasOne(CustomerGeo::class);
     }

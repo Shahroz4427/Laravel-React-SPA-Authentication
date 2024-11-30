@@ -17,7 +17,8 @@ class CustomerGeoFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'lat' => fake()->latitude(),
+            'lng' => fake()->longitude(),
         ];
     }
 }

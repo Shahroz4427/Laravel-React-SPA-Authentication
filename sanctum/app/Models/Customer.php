@@ -6,15 +6,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+
 /**
  * @method static create(array $array)
- * @property mixed $name
- * @property mixed $username
- * @property mixed $email
- * @property mixed $phone
- * @property mixed $website
- * @property mixed $address
+ * @property mixed $customerAddress
  * @property mixed $company
+ * @property mixed $address
+ * @property mixed $website
+ * @property mixed $phone
+ * @property mixed $email
+ * @property mixed $username
+ * @property mixed $name
  */
 class Customer extends Model
 {
@@ -30,13 +32,13 @@ class Customer extends Model
     ];
 
 
-    public function address(): HasOne
+    public function customerAddress(): HasOne
     {
         return $this->hasOne(CustomerAddress::class);
     }
 
 
-    public function company(): HasOne
+    public function customerCompany(): HasOne
     {
         return $this->hasOne(CustomerCompany::class);
     }

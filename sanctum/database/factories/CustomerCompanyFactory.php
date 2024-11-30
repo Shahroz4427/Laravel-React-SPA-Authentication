@@ -17,7 +17,9 @@ class CustomerCompanyFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => fake()->company(),
+            'catch_phrase' => fake()->text(50),
+            'bs' => fake()->text(10)
         ];
     }
 }

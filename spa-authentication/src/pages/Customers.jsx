@@ -7,22 +7,42 @@ import ActionsDropDown from "../components/ActionsDropDown";
 import SortableHeader from "../components/SortableHeader";
 import '../table.css'
 
+
+const sortMapping = {
+    asc: {
+        Name: "name",
+        Email: "email",
+    },
+    desc: {
+        Name: "-name",
+        Email: "-email",
+    },
+};
+
+
 const Customers = () => {
 
-    const [search, setSearch] = useState("")
-    const [perPage, setPage] = useState("10");
+    const [search, setSearch] = useState("");
+
+    const [perPage, setPerPage] = useState("10");
+
     const [paginationState, dispatchPagination] = useReducer(paginationReducer, { activePage: 1 });
-    const [specificSearch, setSpecificSearch] = useState({ name: "", email: "", phone: "" })
 
+    const [specificSearch, setSpecificSearch] = useState({ name: "", email: "", phone: "" });
 
+    const [sort, setSort] = useState();
 
     const { data, isLoading } = CustomersService.fetchCustomers({
-        ...(search && { 'filter[search]': search }),
+        ...(search ? { "filter[search]": search } : {
+            "filter[name]": specificSearch.name,
+            "filter[email]": specificSearch.email,
+        }),
         perPage,
         page: paginationState.activePage,
-        include: 'customerAddress,customerCompany',
-        ...(!search && { 'filter[name]': specificSearch.name, 'filter[email]': specificSearch.email }),
+        include: "customerAddress,customerCompany",
+        sort,
     });
+
 
     const handlePrePage = () => {
         if (paginationState.activePage > 1) {
@@ -38,9 +58,7 @@ const Customers = () => {
 
     const handleSetPage = (page) => dispatchPagination({ type: 'SetPage', page });
 
-    const handleSort = (order,name) => {
-        console.log(`Sorting in order: ${order} for ${name}`);
-    };
+    const handleSort = (order, name) => setSort(sortMapping[order]?.[name] || null);
 
 
 
@@ -52,7 +70,7 @@ const Customers = () => {
                     <div className="row mx-2 align-items-center">
                         <div className="col-12 col-sm-6 col-md-2 mb-3 mb-md-0">
                             <div className="dataTables_length">
-                                <select className="form-select" onChange={(e) => setPage(e.target.value)} value={perPage}>
+                                <select className="form-select" onChange={(e) => setPerPage(e.target.value)} value={perPage}>
                                     <option value="5">5</option>
                                     <option value="10">10</option>
                                     <option value="15">15</option>
@@ -138,6 +156,7 @@ const Customers = () => {
                         </div>
                         <div className="col-sm-12 col-md-6">
                             <Pagination
+                                isLoading={isLoading}
                                 pagelinks={data && data.meta.links}
                                 activeLink={(page) => handleSetPage(page)}
                                 last_page={data && data.meta.last_page}

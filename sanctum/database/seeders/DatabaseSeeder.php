@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Customer;
+use App\Models\CustomerAddress;
+use App\Models\CustomerCompany;
+use App\Models\CustomerGeo;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -14,23 +15,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
 
-        \App\Models\User::factory(10)->create();
+        Customer::factory(50)
+            ->has(
+                CustomerAddress::factory()
+                    ->has(CustomerGeo::factory())
+            )
+            ->has(
+                CustomerCompany::factory()
+            )
+            ->create();
 
-        \App\Models\Post::factory(10)->create();
 
-        \App\Models\Comment::factory(10)->create();
 
-        \App\Models\Album::factory(10)->create();
-
-        \App\Models\Photo::factory(10)->create();
-
-        \App\Models\Todo::factory(10)->create();
     }
 }

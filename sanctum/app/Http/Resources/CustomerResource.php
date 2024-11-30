@@ -27,10 +27,10 @@ class CustomerResource extends JsonResource
             'name' => $this->name,
             'username' => $this->username,
             'email' => $this->email,
-            'address' => new CustomerAddressResource($this->whenLoaded('address')),
+            'address' => new CustomerAddressResource($this->whenLoaded('customerAddress')),
             'phone' => $this->phone,
             'website' => $this->website,
-            'company' => new CustomerCompanyResource($this->whenLoaded('company'))
+            'company' => new CustomerCompanyResource($this->whenLoaded('customerCompany'))
         ];
     }
 }

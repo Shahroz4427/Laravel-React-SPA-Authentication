@@ -25,7 +25,7 @@ class CustomerAddressResource extends JsonResource
             'suite' => $this->suite,
             'city' => $this->city,
             'zipcode' => $this->zipcode,
-            'geo' => new CustomerGeoResource($this->whenLoaded('geo'))
+            'geo' => new CustomerGeoResource($this->whenLoaded('customerGeo'))
         ];
     }
 }
