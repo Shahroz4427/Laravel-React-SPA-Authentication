@@ -1,10 +1,10 @@
 
-import { useNavigate,Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { axios } from '../lib/axios';
 
 const SideNav = () => {
 
-
+    const location = useLocation();
     const navigate = useNavigate();
 
     async function logout() {
@@ -30,7 +30,7 @@ const SideNav = () => {
                             className="img-fluid rounded-circle"
                             style={{ height: '50px', width: '50px' }}></img>
                     </span>
-                    <span className="mx-1">XELITE CRM</span>
+                    <span className="mx-1">Sneat</span>
                 </a>
                 <a href="#"
                     className="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
@@ -39,15 +39,15 @@ const SideNav = () => {
             </div>
             <div className="menu-inner-shadow"></div>
             <ul className="menu-inner py-1">
-                <li className="menu-item">
+                <li className={`menu-item ${location.pathname === "/" ? "active" : ""}`}>
                     <Link to="/" className="menu-link">
                         <i className="menu-icon tf-icons bx bx-home-circle"></i>
                         <div data-i18n="Home">Home</div>
                     </Link>
                 </li>
 
-                <li className="menu-item">
-                    <Link to="/customers" className="menu-link active">
+                <li className={`menu-item ${location.pathname === "/customers" ? "active" : ""}`}>
+                    <Link to="/customers" className="menu-link">
                         <i className="menu-icon tf-icons bx bx-user"></i>
                         <div data-i18n="customers">Customers</div>
                     </Link>

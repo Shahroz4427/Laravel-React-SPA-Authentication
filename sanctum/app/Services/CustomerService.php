@@ -34,7 +34,7 @@ class CustomerService
                 ...$this->partialFilters()
             ])
             ->allowedIncludes(['customerAddress', 'customerCompany', 'customerAddress.customerGeo'])
-            ->allowedSorts(['name', 'email'])
+            ->allowedSorts(['name', 'username', 'email', 'phone', 'website'])
             ->paginate($perPage)
             ->withQueryString();
     }

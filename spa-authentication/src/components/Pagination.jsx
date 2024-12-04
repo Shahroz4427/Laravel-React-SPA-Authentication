@@ -16,7 +16,7 @@ const Pagination = ({
                     <div className="demo-inline-spacing">
                         <nav aria-label="Page navigation">
                             <ul className="pagination">
-                                {Array(5).fill(null).map((_, index) => (
+                                {Array(8).fill(null).map((_, index) => (
                                     <li key={index} className="page-item skeleton">
                                         <div className="page-link skeleton-loader" />
                                     </li>
