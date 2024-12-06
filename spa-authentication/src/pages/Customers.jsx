@@ -4,6 +4,8 @@ import paginationReducer from "../reducers/paginationReducer";
 import CustomersService from "../services/CustomersService";
 import Pagination from "../components/Pagination";
 import SortableHeader from "../components/SortableHeader";
+import Swal from 'sweetalert2/dist/sweetalert2.js'
+import 'sweetalert2/dist/sweetalert2.min.css';
 import '../table.css'
 
 
@@ -23,22 +25,19 @@ const sortMapping = {
 
 const Customers = () => {
 
-    const [search, setSearch] = useState("");
+    const [globalSearch, setGlobalSearch] = useState({ "filter[search]": "" });
 
     const [perPage, setPerPage] = useState("5");
 
     const [paginationState, dispatchPagination] = useReducer(paginationReducer, { activePage: 1 });
 
-    const [specificSearch, setSpecificSearch] = useState({ name: "", email: "", username: "" });
+    const [specificSearch, setSpecificSearch] = useState({ "filter[name]": "", "filter[username]": "", "filter[email]": "" });
 
     const [sort, setSort] = useState();
 
     const { data, isLoading } = CustomersService.fetchCustomers({
-        ...(search ? { "filter[search]": search } : {
-            "filter[name]": specificSearch.name,
-            "filter[username]": specificSearch.username,
-            "filter[email]": specificSearch.email
-        }),
+        ...globalSearch,
+        ...specificSearch,
         perPage,
         page: paginationState.activePage,
         include: "customerAddress,customerCompany",
@@ -62,72 +61,109 @@ const Customers = () => {
 
     const handleSort = (order, name) => setSort(sortMapping[order]?.[name] || null);
 
+    const showAlert = () => {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: 'You will not be able to recover this ',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'No, cancel!',
+        }).then((result) => {
+            if (result.value) {
+
+
+            } else if (result.dismiss === Swal.DismissReason.cancel) {
+
+            }
+        })
+    }
 
 
     return (
         <Layout>
-            <div className="row">
-                <div className="col-lg-3 col-md-12 col-6 mb-4">
+            <div className="row g-6 mb-6">
+                <div className="col-sm-6 col-xl-3">
                     <div className="card">
                         <div className="card-body">
-                            <div className="card-title d-flex align-items-start justify-content-between">
-                                <div className="avatar flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" >
-                                        <path fill="#6563FF"
-                                            d="M21,10.5H20v-1a1,1,0,0,0-2,0v1H17a1,1,0,0,0,0,2h1v1a1,1,0,0,0,2,0v-1h1a1,1,0,0,0,0-2Zm-7.7,1.72A4.92,4.92,0,0,0,15,8.5a5,5,0,0,0-10,0,4.92,4.92,0,0,0,1.7,3.72A8,8,0,0,0,2,19.5a1,1,0,0,0,2,0,6,6,0,0,1,12,0,1,1,0,0,0,2,0A8,8,0,0,0,13.3,12.22ZM10,11.5a3,3,0,1,1,3-3A3,3,0,0,1,10,11.5Z"></path>
-                                    </svg>
+                            <div className="d-flex align-items-start justify-content-between">
+                                <div className="content-left">
+                                    <span className="text-heading">Customers</span>
+                                    <div className="d-flex align-items-center my-1">
+                                        <h4 className="mb-0 me-2">4</h4>
+                                        <p className="text-success mb-0">(100%)</p>
+                                    </div>
+                                    <small className="mb-0">Total Customers</small>
+                                </div>
+                                <div className="avatar">
+                                    <span className="avatar-initial rounded bg-label-primary">
+                                        <i className="bx bx-user bx-lg"></i>
+                                    </span>
                                 </div>
                             </div>
-                            <span className="fw-semibold d-block mb-1">Active Customers</span>
-                            <h3 className="card-title mb-2">50</h3>
                         </div>
                     </div>
                 </div>
-                <div className="col-lg-3 col-md-12 col-6 mb-4">
+                <div className="col-sm-6 col-xl-3">
                     <div className="card">
                         <div className="card-body">
-                            <div className="card-title d-flex align-items-start justify-content-between">
-                                <div className="avatar flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" >
-                                        <path fill="#6563FF"
-                                            d="M12,14a1,1,0,1,0-1-1A1,1,0,0,0,12,14Zm5,0a1,1,0,1,0-1-1A1,1,0,0,0,17,14Zm-5,4a1,1,0,1,0-1-1A1,1,0,0,0,12,18Zm5,0a1,1,0,1,0-1-1A1,1,0,0,0,17,18ZM7,14a1,1,0,1,0-1-1A1,1,0,0,0,7,14ZM19,4H18V3a1,1,0,0,0-2,0V4H8V3A1,1,0,0,0,6,3V4H5A3,3,0,0,0,2,7V19a3,3,0,0,0,3,3H19a3,3,0,0,0,3-3V7A3,3,0,0,0,19,4Zm1,15a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1V10H20ZM20,8H4V7A1,1,0,0,1,5,6H19a1,1,0,0,1,1,1ZM7,18a1,1,0,1,0-1-1A1,1,0,0,0,7,18Z"></path>
-                                    </svg>
+                            <div className="d-flex align-items-start justify-content-between">
+                                <div className="content-left">
+                                    <span className="text-heading">Verified Customers</span>
+                                    <div className="d-flex align-items-center my-1">
+                                        <h4 className="mb-0 me-2">0</h4>
+                                        <p className="text-success mb-0">(+95%)</p>
+                                    </div>
+                                    <small className="mb-0">Recent analytics </small>
+                                </div>
+                                <div className="avatar">
+                                    <span className="avatar-initial rounded bg-label-success">
+                                        <i className="bx bx-user-check bx-lg"></i>
+                                    </span>
                                 </div>
                             </div>
-                            <span className="fw-semibold d-block mb-1">Schedule Appointments</span>
-                            <h3 className="card-title mb-2">50</h3>
                         </div>
                     </div>
                 </div>
-                <div className="col-lg-3 col-md-12 col-6 mb-4">
+                <div className="col-sm-6 col-xl-3">
                     <div className="card">
                         <div className="card-body">
-                            <div className="card-title d-flex align-items-start justify-content-between">
-                                <div className="avatar flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" >
-                                        <path fill="#6563FF"
-                                            d="M12,14a1,1,0,1,0-1-1A1,1,0,0,0,12,14Zm5,0a1,1,0,1,0-1-1A1,1,0,0,0,17,14Zm-5,4a1,1,0,1,0-1-1A1,1,0,0,0,12,18Zm5,0a1,1,0,1,0-1-1A1,1,0,0,0,17,18ZM7,14a1,1,0,1,0-1-1A1,1,0,0,0,7,14ZM19,4H18V3a1,1,0,0,0-2,0V4H8V3A1,1,0,0,0,6,3V4H5A3,3,0,0,0,2,7V19a3,3,0,0,0,3,3H19a3,3,0,0,0,3-3V7A3,3,0,0,0,19,4Zm1,15a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1V10H20ZM20,8H4V7A1,1,0,0,1,5,6H19a1,1,0,0,1,1,1ZM7,18a1,1,0,1,0-1-1A1,1,0,0,0,7,18Z"></path>
-                                    </svg>
+                            <div className="d-flex align-items-start justify-content-between">
+                                <div className="content-left">
+                                    <span className="text-heading">Duplicate Customers</span>
+                                    <div className="d-flex align-items-center my-1">
+                                        <h4 className="mb-0 me-2">0</h4>
+                                        <p className="text-success mb-0">(0%)</p>
+                                    </div>
+                                    <small className="mb-0">Recent analytics</small>
+                                </div>
+                                <div className="avatar">
+                                    <span className="avatar-initial rounded bg-label-danger">
+                                        <i className="bx bx-group bx-lg"></i>
+                                    </span>
                                 </div>
                             </div>
-                            <span className="d-block mb-1">Pending Appointments</span>
-                            <h3 className="card-title text-nowrap mb-2">50</h3>
                         </div>
                     </div>
                 </div>
-                <div className="col-lg-3 col-md-12 col-6 mb-4">
+                <div className="col-sm-6 col-xl-3">
                     <div className="card">
                         <div className="card-body">
-                            <div className="card-title d-flex align-items-start justify-content-between">
-                                <div className="avatar flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" >
-                                        <path fill="#6563FF"
-                                            d="M12,14a1,1,0,1,0-1-1A1,1,0,0,0,12,14Zm5,0a1,1,0,1,0-1-1A1,1,0,0,0,17,14Zm-5,4a1,1,0,1,0-1-1A1,1,0,0,0,12,18Zm5,0a1,1,0,1,0-1-1A1,1,0,0,0,17,18ZM7,14a1,1,0,1,0-1-1A1,1,0,0,0,7,14ZM19,4H18V3a1,1,0,0,0-2,0V4H8V3A1,1,0,0,0,6,3V4H5A3,3,0,0,0,2,7V19a3,3,0,0,0,3,3H19a3,3,0,0,0,3-3V7A3,3,0,0,0,19,4Zm1,15a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1V10H20ZM20,8H4V7A1,1,0,0,1,5,6H19a1,1,0,0,1,1,1ZM7,18a1,1,0,1,0-1-1A1,1,0,0,0,7,18Z"></path>
-                                    </svg>
+                            <div className="d-flex align-items-start justify-content-between">
+                                <div className="content-left">
+                                    <span className="text-heading">Verification Pending</span>
+                                    <div className="d-flex align-items-center my-1">
+                                        <h4 className="mb-0 me-2">4</h4>
+                                        <p className="text-danger mb-0">(+6%)</p>
+                                    </div>
+                                    <small className="mb-0">Recent analytics</small>
+                                </div>
+                                <div className="avatar">
+                                    <span className="avatar-initial rounded bg-label-warning">
+                                        <i className="bx bx-user-voice bx-lg"></i>
+                                    </span>
                                 </div>
                             </div>
-                            <span className="fw-semibold d-block mb-1">Completed Appointments</span>
-                            <h3 className="card-title mb-2">50</h3>
                         </div>
                     </div>
                 </div>
@@ -135,31 +171,40 @@ const Customers = () => {
             <div className="card">
                 <div className="card-header">
                     <h5 className="card-title">CUSTOMERS</h5>
-                    <div className="row">
-                        <div className="col-1">
-                            <select className="form-select" onChange={(e) => setPerPage(e.target.value)} value={perPage}>
-                                <option value="5">5</option>
-                                <option value="10">10</option>
-                                <option value="15">15</option>
-                                <option value="20">20</option>
-                            </select>
+                    <div className="row align-items-center">
+                        <div className="col-auto">
+                            <label>
+                                <select
+                                    name="DataTables_Table_0_length"
+                                    aria-controls="DataTables_Table_0"
+                                    className="form-select mx-2"
+                                    onChange={(e) => setPerPage(e.target.value)}
+                                    value={perPage}
+                                >
+                                    <option value="5">5</option>
+                                    <option value="10">10</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+                                </select>
+                            </label>
                         </div>
-                        <div className="col-3">
+
+                        <div className="col-auto d-flex align-items-center ms-auto">
                             <input
-                                onChange={(e) => setSearch(e.target.value)}
+                                onChange={(e) => setGlobalSearch({ ...globalSearch, "filter[search]": e.target.value })}
                                 type="search"
-                                className="form-control"
+                                className="form-control me-2"
+                                style={{ width: '200px' }}  // Adjust the input width to prevent it from stretching
                                 placeholder="Search..."
                                 aria-label="Search"
                             />
-                        </div>
-                        <div className="col-3">
                             <button className="btn btn-primary">
                                 <i className="bx bx-plus me-2"></i>
                                 <span className="d-none d-sm-inline">New Customer</span>
                             </button>
                         </div>
                     </div>
+
                 </div>
                 <div className="table-responsive text-nowrap">
                     <table className="table">
@@ -176,16 +221,16 @@ const Customers = () => {
                         <tbody>
                             <tr>
                                 <td>
-
+                                    <input type="checkbox" className="dt-checkboxes form-check-input" />
                                 </td>
                                 <td>
-                                    <input onChange={(e) => setSpecificSearch({ ...specificSearch, name: e.target.value })} type="search" className="form-control" placeholder="Search" />
+                                    <input style={{ width: '250px' }} onChange={(e) => setSpecificSearch({ ...specificSearch, "filter[name]": e.target.value })} type="search" className="form-control" placeholder="Search" />
                                 </td>
                                 <td>
-                                    <input onChange={(e) => setSpecificSearch({ ...specificSearch, username: e.target.value })} type="search" className="form-control" placeholder="Search" />
+                                    <input style={{ width: '250px' }} onChange={(e) => setSpecificSearch({ ...specificSearch, "filter[username]": e.target.value })} type="search" className="form-control" placeholder="Search" />
                                 </td>
                                 <td>
-                                    <input onChange={(e) => setSpecificSearch({ ...specificSearch, email: e.target.value })} type="search" className="form-control" placeholder="Search" />
+                                    <input style={{ width: '250px' }} onChange={(e) => setSpecificSearch({ ...specificSearch, "filter[email]": e.target.value })} type="search" className="form-control" placeholder="Search" />
                                 </td>
                             </tr>
                             {isLoading ? (
@@ -203,7 +248,7 @@ const Customers = () => {
                             ) : (
                                 data?.data.map((customer, index) => (
                                     <tr key={index}>
-                                        <td>{index + 1}</td>
+                                        <td><input type="checkbox" className="dt-checkboxes form-check-input" /></td>
                                         <td>{customer.name}</td>
                                         <td>{customer.username}</td>
                                         <td>{customer.email}</td>
@@ -212,7 +257,7 @@ const Customers = () => {
                                             <div className="row">
                                                 <div className="col-6">
                                                     <button type="button" className="btn btn-warning mx-1"> Edit </button>
-                                                    <button type="button" className="btn btn-danger mx-1">  Delete </button>
+                                                    <button onClick={showAlert} type="button" className="btn btn-danger mx-1">Delete</button>
                                                 </div>
                                             </div>
                                         </td>
@@ -224,7 +269,7 @@ const Customers = () => {
                 </div>
                 <div className="card-footer">
                     <div className="row mx-2 ">
-                        <div className="col-sm-12 col-md-6 py-3">
+                        <div className="col-sm-12 col-md-6 py-5">
                             <div className="dataTables_info">Showing {data && data.meta.from} to {data && data.meta.to} of {data && data.meta.total} entries</div>
                         </div>
                         <div className="col-sm-12 col-md-6">

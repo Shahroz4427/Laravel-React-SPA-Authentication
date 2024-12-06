@@ -1,13 +1,14 @@
 const Pagination = ({
     pagelinks = [],
     activeLink,
-    moveToFirstPage,
+    last_page,
     moveToLastPage,
+    moveToFirstPage,
     moveToNextPage,
     moveToPrePage,
-    isLoading,
-    last_page,
+    isLoading
 }) => {
+
     if (isLoading) {
         return (
             <div className="row">
@@ -15,7 +16,7 @@ const Pagination = ({
                     <div className="demo-inline-spacing">
                         <nav aria-label="Page navigation">
                             <ul className="pagination">
-                                {Array(10).fill(null).map((_, index) => (
+                                {Array(8).fill(null).map((_, index) => (
                                     <li key={index} className="page-item skeleton">
                                         <div className="page-link skeleton-loader" />
                                     </li>
@@ -28,57 +29,18 @@ const Pagination = ({
         );
     }
 
-    const generateLinks = () => {
-        const maxVisible = 5;
-        const numberedLinks = pagelinks.filter(
-            (link) => link.url && !isNaN(link.label)
+    const links = pagelinks.map((link, index) => {
+        if (link.label === '&laquo; Previous' || link.label === 'Next &raquo;') {
+            return null;
+        }
+        return (
+            <li key={index} className={link.active ? 'page-item active' : 'page-item'}>
+                <button onClick={() => activeLink(parseInt(link.label, 10))} className="page-link">
+                    {link.label}
+                </button>
+            </li>
         );
-        const activeIndex = numberedLinks.findIndex((link) => link.active);
-        const totalPages = numberedLinks.length;
-
-        const links = [];
-        let start = Math.max(activeIndex - Math.floor(maxVisible / 2), 0);
-        let end = Math.min(start + maxVisible, totalPages);
-
-        if (end - start < maxVisible) {
-            start = Math.max(end - maxVisible, 0);
-        }
-
-        if (start > 0) {
-            links.push(
-                <li key="start-ellipsis" className="page-item disabled">
-                    <span className="page-link">...</span>
-                </li>
-            );
-        }
-        numberedLinks.slice(start, end).forEach((link, index) => {
-            links.push(
-                <li
-                    key={link.label}
-                    className={`page-item ${link.active ? "active" : ""}`}
-                >
-                    <button
-                        onClick={() =>
-                            link.url && activeLink(parseInt(link.label, 10))
-                        }
-                        className="page-link"
-                        disabled={!link.url}
-                    >
-                        {link.label}
-                    </button>
-                </li>
-            );
-        });
-        if (end < totalPages) {
-            links.push(
-                <li key="end-ellipsis" className="page-item disabled">
-                    <span className="page-link">...</span>
-                </li>
-            );
-        }
-
-        return links;
-    };
+    });
 
     return (
         <div className="row">
@@ -89,8 +51,7 @@ const Pagination = ({
                             <li className="page-item first">
                                 <button
                                     onClick={() => moveToFirstPage()}
-                                    className="page-link"
-                                    disabled={!pagelinks[0]?.url}
+                                    className="page-link first"
                                 >
                                     <i className="tf-icon bx bx-chevrons-left"></i>
                                 </button>
@@ -98,18 +59,16 @@ const Pagination = ({
                             <li className="page-item prev">
                                 <button
                                     onClick={() => moveToPrePage()}
-                                    className="page-link"
-                                    disabled={!pagelinks[0]?.url}
+                                    className="page-link prev"
                                 >
                                     <i className="tf-icon bx bx-chevron-left"></i>
                                 </button>
                             </li>
-                            {generateLinks()}
+                            {links}
                             <li className="page-item next">
                                 <button
                                     onClick={() => moveToNextPage()}
-                                    className="page-link"
-                                    disabled={!pagelinks[pagelinks.length - 1]?.url}
+                                    className="page-link next"
                                 >
                                     <i className="tf-icon bx bx-chevron-right"></i>
                                 </button>
@@ -117,8 +76,7 @@ const Pagination = ({
                             <li className="page-item last">
                                 <button
                                     onClick={() => moveToLastPage(last_page)}
-                                    className="page-link"
-                                    disabled={!pagelinks[pagelinks.length - 1]?.url}
+                                    className="page-link last"
                                 >
                                     <i className="tf-icon bx bx-chevrons-right"></i>
                                 </button>
@@ -132,7 +90,3 @@ const Pagination = ({
 };
 
 export default Pagination;
-
-
-
-
