@@ -6,7 +6,7 @@ const Pagination = ({
     moveToNextPage,
     moveToPrePage,
     isLoading,
-    last_page,
+    lastPage,
 }) => {
     if (isLoading) {
         return (
@@ -27,6 +27,7 @@ const Pagination = ({
             </div>
         );
     }
+
 
     const generateLinks = () => {
         const maxVisible = 5;
@@ -116,7 +117,7 @@ const Pagination = ({
                             </li>
                             <li className="page-item last">
                                 <button
-                                    onClick={() => moveToLastPage(last_page)}
+                                    onClick={() => moveToLastPage(lastPage)}
                                     className="page-link"
                                     disabled={!pagelinks[pagelinks.length - 1]?.url}
                                 >

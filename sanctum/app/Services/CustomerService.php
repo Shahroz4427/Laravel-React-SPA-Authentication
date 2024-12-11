@@ -49,7 +49,7 @@ class CustomerService
 
         $this->createCustomerCompany($customer, $validatedData['company']);
 
-        $customer->load(['address', 'company', 'address.geo']);
+        $customer->load(['customerAddress', 'customerCompany', 'customerAddress.customerGeo']);
 
         return $customer;
     }
