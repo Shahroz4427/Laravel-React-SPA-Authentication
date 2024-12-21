@@ -25,7 +25,6 @@ class CustomerService
         ];
     }
 
-
     public function searchQuery(string $perPage): LengthAwarePaginator
     {
         return QueryBuilder::for(Customer::class)
@@ -35,19 +34,27 @@ class CustomerService
             ])
             ->allowedIncludes(['customerAddress', 'customerCompany', 'customerAddress.customerGeo'])
             ->allowedSorts(['name', 'username', 'email', 'phone', 'website'])
+            ->defaultSort('-id')
             ->paginate($perPage)
             ->withQueryString();
     }
+
 
     public function createCustomer(array $validatedData): Customer
     {
         $customer = $this->createCustomerOnly($validatedData);
 
-        $address = $this->createCustomerAddress($customer, $validatedData['address']);
+        if(isset($validatedData['address']) )
+        {
+            $address = $this->createCustomerAddress($customer, $validatedData['address']);
 
-        $this->createCustomerGeo($address, $validatedData['address']['geo']);
+            $this->createCustomerGeo($address, $validatedData['address']['geo']);
+        }
 
-        $this->createCustomerCompany($customer, $validatedData['company']);
+        if(isset($validatedData['company']))
+        {
+            $this->createCustomerCompany($customer, $validatedData['company']);
+        }
 
         $customer->load(['customerAddress', 'customerCompany', 'customerAddress.customerGeo']);
 

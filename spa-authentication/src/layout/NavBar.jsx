@@ -1,8 +1,10 @@
+import Notification from '../components/Notification'
+
 const NavBar = () => {
 
     const authUser = JSON.parse(localStorage.getItem("authUser"));
 
-    
+
     return (
         <>
             <nav
@@ -28,9 +30,7 @@ const NavBar = () => {
                         </div>
                     </div>
                     <ul className="navbar-nav flex-row align-items-center ms-auto">
-                        <li className="nav-item lh-1 me-3 ">
-
-                        </li>
+                        <Notification />
                         <li className="nav-item navbar-dropdown dropdown-user dropdown">
                             <a className="nav-link dropdown-toggle hide-arrow" href="#"
                                 data-bs-toggle="dropdown">

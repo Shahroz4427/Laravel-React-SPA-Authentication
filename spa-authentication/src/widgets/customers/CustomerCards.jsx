@@ -1,6 +1,4 @@
-
-
-const CustomerIndexCards = () => {
+const CustomerCards = () => {
     return (
         <>
             <div className="row g-6 mb-6">
@@ -93,4 +91,4 @@ const CustomerIndexCards = () => {
     )
 }
 
-export default CustomerIndexCards
+export default CustomerCards

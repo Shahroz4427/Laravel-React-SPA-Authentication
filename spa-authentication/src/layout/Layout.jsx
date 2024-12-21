@@ -1,6 +1,6 @@
-import SideNav from "./components/SideNav.jsx"
-import NavBar from "./components/NavBar.jsx"
-import Footer from "./components/Footer.jsx"
+import SideNav from './SideNav.jsx'
+import NavBar from './NavBar.jsx'
+import Footer from './Footer.jsx'
 
 const Layout = ({children}) => {
     return (

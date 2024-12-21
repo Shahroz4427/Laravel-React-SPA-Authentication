@@ -1,15 +1,17 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import Home from './pages/Home.jsx';
-import Login from './pages/Login.jsx';
-import Register from './pages/Register.jsx';
-import Customers from './pages/Customers.jsx';
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { initializeCsrf } from './lib/axios.js';
-import { Navigate, Outlet } from "react-router-dom";
 import { QueryClient, QueryClientProvider, } from '@tanstack/react-query';
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Navigate, Outlet } from "react-router-dom";
+import { initializeCsrf } from './lib/axios.js';
+import Customers from './pages/Customers.jsx';
+import { createRoot } from 'react-dom/client';
+import Register from './pages/Register.jsx';
+import Login from './pages/Login.jsx';
+import Home from './pages/Home.jsx';
+import { StrictMode } from 'react'
 
+
+const queryClient = new QueryClient();
 
 const csrfCookieExists = () => {
     return document.cookie.split("; ").some((cookie) => cookie.startsWith("XSRF-TOKEN="));
@@ -84,23 +86,24 @@ const router = createBrowserRouter([
     },
 });
 
-const queryClient = new QueryClient();
+
 
 createRoot(document.getElementById('root')).render(
-    <QueryClientProvider client={queryClient}>
-        <RouterProvider
-            router={router}
-            future={{
-                v7_skipActionErrorRevalidation: true,
-                v7_skipActionStatusRevalidation: true,
-                v7_startTransition: true,
-                v7_relativeSplatPath: true,
-                v7_fetcherPersist: true,
-                v7_normalizeFormMethod: true,
-                v7_partialHydration: true,
-            }}
-        />
-        <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
-
+    <StrictMode>
+        <QueryClientProvider client={queryClient}>
+            <RouterProvider
+                router={router}
+                future={{
+                    v7_skipActionErrorRevalidation: true,
+                    v7_skipActionStatusRevalidation: true,
+                    v7_startTransition: true,
+                    v7_relativeSplatPath: true,
+                    v7_fetcherPersist: true,
+                    v7_normalizeFormMethod: true,
+                    v7_partialHydration: true,
+                }}
+            />
+            <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
+    </StrictMode>
 );

@@ -17,13 +17,13 @@ const useCustomers = () => {
         ...specificSearch,
         perPage,
         page: paginationState.activePage,
-        include: "customerAddress,customerCompany",
+        // include: "customerAddress,customerCompany",
         sort,
     });
 
     const sortMapping = {
-        asc: { Name: "name", Email: "email", Username: "username" },
-        desc: { Name: "-name", Email: "-email", Username: "-username" },
+        asc: { Name: "name", Email: "email", Username: "username", Phone: "phone" },
+        desc: { Name: "-name", Email: "-email", Username: "-username", Phone: "-phone" },
     };
 
     const handlePrePage = () => {
@@ -57,7 +57,7 @@ const useCustomers = () => {
         });
     };
 
-    
+
 
     return {
         data,
@@ -69,7 +69,7 @@ const useCustomers = () => {
             handleSetPage,
             handlePrePage,
             handleNextPage,
-            
+
         },
         search: {
             globalSearch,
@@ -82,7 +82,7 @@ const useCustomers = () => {
             handleSort,
         },
         showAlert,
-        refetch
+        refetch,
     };
 };
 

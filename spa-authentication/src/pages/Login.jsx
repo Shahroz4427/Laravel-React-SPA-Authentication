@@ -3,12 +3,15 @@ import { axios } from '../lib/axios.js';
 import { useForm } from "react-hook-form";
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, Link } from 'react-router-dom';
+import useDocumentTitle from '../hooks/useDocumentTitle.jsx';
 import * as z from 'zod';
 
 const Login = () => {
 
 
     const navigate = useNavigate();
+
+    useDocumentTitle('Login');
 
     const schema = z.object({
         email: z.string().email({ message: "Invalid email address" }).min(1, { message: "Email is required" }),

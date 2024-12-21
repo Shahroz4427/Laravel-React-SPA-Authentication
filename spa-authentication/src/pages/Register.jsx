@@ -3,12 +3,15 @@ import { axios } from '../lib/axios.js';
 import { useForm } from "react-hook-form";
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, Link } from 'react-router-dom';
+import useDocumentTitle from '../hooks/useDocumentTitle.jsx';
 import * as z from 'zod';
 
 const Register = () => {
 
 
     const navigate = useNavigate();
+
+    useDocumentTitle('Register');
 
     const schema = z.object({
         name: z.string().min(1, { message: "Name is required" }),

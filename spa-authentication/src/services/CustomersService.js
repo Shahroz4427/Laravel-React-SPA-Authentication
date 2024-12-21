@@ -10,14 +10,21 @@ class CustomersService {
     };
 
 
+    static fetchCustomers = (query) => {
+        return useQuery({
+            queryKey: ["customers", query],
+            queryFn: () => CustomersService.getCustomers(query),
+        });
+    };
+
     static destroyCustomer = async (id) => {
         try {
             const response = await axios.delete(`/api/customers/${id}`)
             if (response.status === 200) {
-                console.log("deleted successfully");
+                return response;
             }
         } catch (error) {
-            console.error(error);
+            throw error;
         }
     }
 
@@ -28,18 +35,8 @@ class CustomersService {
                 return response;
             }
         } catch (error) {
-            console.error("Error occurred while creating customer:", error);
             throw error;
         }
-    };
-
-
-
-    static fetchCustomers = (query) => {
-        return useQuery({
-            queryKey: ["customers", query],
-            queryFn: () => CustomersService.getCustomers(query),
-        });
     };
 
 }
