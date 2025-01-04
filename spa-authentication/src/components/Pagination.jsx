@@ -15,7 +15,7 @@ const Pagination = ({
                     <div className="demo-inline-spacing">
                         <nav aria-label="Page navigation">
                             <ul className="pagination">
-                                {Array(10).fill(null).map((_, index) => (
+                                {Array(8).fill(null).map((_, index) => (
                                     <li key={index} className="page-item skeleton">
                                         <div className="page-link skeleton-loader" />
                                     </li>
@@ -30,7 +30,7 @@ const Pagination = ({
 
 
     const generateLinks = () => {
-        const maxVisible = 5;
+        const maxVisible = 3;
         const numberedLinks = pagelinks.filter(
             (link) => link.url && !isNaN(link.label)
         );
@@ -82,52 +82,48 @@ const Pagination = ({
     };
 
     return (
-        <div className="row">
-            <div className="col d-flex justify-content-end">
-                <div className="demo-inline-spacing">
-                    <nav aria-label="Page navigation">
-                        <ul className="pagination">
-                            <li className="page-item first">
-                                <button
-                                    onClick={() => moveToFirstPage()}
-                                    className="page-link"
-                                    disabled={!pagelinks[0]?.url}
-                                >
-                                    <i className="tf-icon bx bx-chevrons-left"></i>
-                                </button>
-                            </li>
-                            <li className="page-item prev">
-                                <button
-                                    onClick={() => moveToPrePage()}
-                                    className="page-link"
-                                    disabled={!pagelinks[0]?.url}
-                                >
-                                    <i className="tf-icon bx bx-chevron-left"></i>
-                                </button>
-                            </li>
-                            {generateLinks()}
-                            <li className="page-item next">
-                                <button
-                                    onClick={() => moveToNextPage()}
-                                    className="page-link"
-                                    disabled={!pagelinks[pagelinks.length - 1]?.url}
-                                >
-                                    <i className="tf-icon bx bx-chevron-right"></i>
-                                </button>
-                            </li>
-                            <li className="page-item last">
-                                <button
-                                    onClick={() => moveToLastPage(lastPage)}
-                                    className="page-link"
-                                    disabled={!pagelinks[pagelinks.length - 1]?.url}
-                                >
-                                    <i className="tf-icon bx bx-chevrons-right"></i>
-                                </button>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
-            </div>
+        <div className="d-flex justify-content-end">
+            <nav aria-label="Page navigation">
+                <ul className="pagination">
+                    <li className="page-item first">
+                        <button
+                            onClick={() => moveToFirstPage()}
+                            className="page-link"
+                            disabled={!pagelinks[0]?.url}
+                        >
+                            <i className="tf-icon bx bx-chevrons-left"></i>
+                        </button>
+                    </li>
+                    <li className="page-item prev">
+                        <button
+                            onClick={() => moveToPrePage()}
+                            className="page-link"
+                            disabled={!pagelinks[0]?.url}
+                        >
+                            <i className="tf-icon bx bx-chevron-left"></i>
+                        </button>
+                    </li>
+                    {generateLinks()}
+                    <li className="page-item next">
+                        <button
+                            onClick={() => moveToNextPage()}
+                            className="page-link"
+                            disabled={!pagelinks[pagelinks.length - 1]?.url}
+                        >
+                            <i className="tf-icon bx bx-chevron-right"></i>
+                        </button>
+                    </li>
+                    <li className="page-item last">
+                        <button
+                            onClick={() => moveToLastPage(lastPage)}
+                            className="page-link"
+                            disabled={!pagelinks[pagelinks.length - 1]?.url}
+                        >
+                            <i className="tf-icon bx bx-chevrons-right"></i>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
         </div>
     );
 };

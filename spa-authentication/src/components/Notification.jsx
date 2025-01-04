@@ -1,39 +1,13 @@
-import { useEffect, useRef } from 'react';
-import PerfectScrollbar from 'perfect-scrollbar';
-import 'perfect-scrollbar/css/perfect-scrollbar.css';
+
+import { usePerfectScrollbar } from '../hooks/usePerfectScroller';
 
 const Notification = () => {
-    const scrollContainerRef = useRef(null);
-
-    useEffect(() => {
-        const ps = new PerfectScrollbar(scrollContainerRef.current, {
-            wheelSpeed: 1,
-            wheelPropagation: false,
-            minScrollbarLength: 20,
-        });
-        const preventScrollPropagation = (e) => {
-            const container = scrollContainerRef.current;
-            if (!container) return;
-
-            const scrollTop = container.scrollTop;
-            const scrollHeight = container.scrollHeight;
-            const clientHeight = container.clientHeight;
-
-            const isAtTop = scrollTop === 0 && e.deltaY < 0;
-            const isAtBottom = scrollTop + clientHeight >= scrollHeight && e.deltaY > 0;
-
-            if (isAtTop || isAtBottom) {
-                e.preventDefault();
-            }
-        };
-
-        const containerElement = scrollContainerRef.current;
-        containerElement.addEventListener('wheel', preventScrollPropagation);
-        return () => {
-            ps.destroy();
-            containerElement.removeEventListener('wheel', preventScrollPropagation);
-        };
-    }, []);
+    
+    const scrollContainerRef = usePerfectScrollbar({
+        wheelSpeed: 1,
+        wheelPropagation: false,
+        minScrollbarLength: 20,
+    });
 
     return (
         <li className="nav-item dropdown-notifications navbar-dropdown dropdown me-3 me-xl-2">
@@ -45,9 +19,9 @@ const Notification = () => {
                 aria-expanded="true"
             >
                 <span className="position-relative">
-                    <i className="bx bx-bell" style={{fontSize:"20px"}} />
+                    <i className="bx bx-bell" style={{ fontSize: "20px" }} />
                     <span className="badge rounded-pill bg-danger badge-dot badge-notifications border" />
-                    
+
                 </span>
             </a>
             <ul

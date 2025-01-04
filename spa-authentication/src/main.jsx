@@ -2,12 +2,14 @@ import { QueryClient, QueryClientProvider, } from '@tanstack/react-query';
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Navigate, Outlet } from "react-router-dom";
+import CustomerEdit from './pages/CustomerEdit.jsx';
 import { initializeCsrf } from './lib/axios.js';
 import Customers from './pages/Customers.jsx';
 import { createRoot } from 'react-dom/client';
 import Register from './pages/Register.jsx';
 import Login from './pages/Login.jsx';
 import Home from './pages/Home.jsx';
+import Chat from './pages/Chat.jsx';
 import { StrictMode } from 'react'
 
 
@@ -54,13 +56,6 @@ const router = createBrowserRouter([
         ],
     },
     {
-        path: "/customers",
-        element: <ProtectedRoute />,
-        children: [
-            { path: "/customers", element: <Customers /> },
-        ],
-    },
-    {
         path: "/login",
         element: <PublicRoute />,
         children: [
@@ -74,6 +69,28 @@ const router = createBrowserRouter([
             { path: "/register", element: <Register /> },
         ],
     },
+    {
+        path: "/customers",
+        element: <ProtectedRoute />,
+        children: [
+            { path: "/customers", element: <Customers /> },
+        ],
+    },
+    {
+        path: "/chat",
+        element: <ProtectedRoute />,
+        children: [
+            { path: "/chat", element: <Chat /> },
+        ],
+    },
+    {
+        path: "/customers/:id/edit",
+        element: <ProtectedRoute />,
+        children: [
+            { path: "/customers/:id/edit", element: <CustomerEdit/> },
+        ],
+    }
+ 
 ], {
     future: {
         v7_skipActionErrorRevalidation: true,

@@ -115,11 +115,11 @@ const SideNav = () => {
                         <div data-i18n="Tasks">Tasks</div>
                     </a>
                 </li>
-                <li className="menu-item">
-                    <a className="cursor-pointer menu-link">
+                <li className={`menu-item ${location.pathname === "/chat" ? "active" : ""}`}>
+                    <Link to="/chat" className="cursor-pointer menu-link">
                         <i className="menu-icon tf-icons bx bx-chat"></i>
                         <div data-i18n="Chat">Chat</div>
-                    </a>
+                    </Link>
                 </li>
                 <li className="menu-item">
                     <a className="cursor-pointer menu-link">

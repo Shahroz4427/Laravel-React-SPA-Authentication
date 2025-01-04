@@ -10,9 +10,8 @@ const SortableHeader = ({ name, onSort }) => {
     };
 
     return (
+        // relative  select-none px-4 py-2 text-left text-gray-950 dark:text-white
         <th
-            className="relative  select-none px-4 py-2 text-left text-gray-950 dark:text-white"
-
             aria-sort={sortOrder}
         >
             <div className="flex items-center justify-between space-x-2">

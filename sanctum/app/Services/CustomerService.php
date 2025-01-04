@@ -6,7 +6,6 @@ use App\Http\Filters\CustomerGlobalSearch;
 use App\Models\Customer;
 use App\Models\CustomerAddress;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -44,41 +43,17 @@ class CustomerService
     {
         $customer = $this->createCustomerOnly($validatedData);
 
-        if(isset($validatedData['address']) )
-        {
-            $address = $this->createCustomerAddress($customer, $validatedData['address']);
-
-            $this->createCustomerGeo($address, $validatedData['address']['geo']);
+        if (!empty($validatedData['address'])) {
+            $this->createCustomerAddressWithGeo($customer, $validatedData['address']);
         }
 
-        if(isset($validatedData['company']))
-        {
+        if (!empty($validatedData['company'])) {
             $this->createCustomerCompany($customer, $validatedData['company']);
         }
 
-        $customer->load(['customerAddress', 'customerCompany', 'customerAddress.customerGeo']);
+        $customer->load(['customerAddress.customerGeo', 'customerCompany']);
 
         return $customer;
-    }
-
-
-    private function createCustomerAddress(Customer $customer, array $data): mixed
-    {
-        return $customer->customerAddress()->create([
-            'street' => $data['street'],
-            'suite' => $data['suite'],
-            'city' => $data['city'],
-            'zipcode' => $data['zipcode']
-        ]);
-    }
-
-
-    private function createCustomerGeo(CustomerAddress $address, array $data): void
-    {
-        $address->CustomerGeo()->create([
-            'lat' => $data['lat'],
-            'lng' => $data['lng']
-        ]);
     }
 
     private function createCustomerOnly(array $data): Customer
@@ -88,90 +63,95 @@ class CustomerService
             'username' => $data['username'],
             'email' => $data['email'],
             'phone' => $data['phone'],
-            'website' => $data['website']
+            'website' => $data['website'],
         ]);
     }
 
-    private function createCustomerCompany(Customer $customer, array $data): void
+    private function createCustomerAddressWithGeo(Customer $customer, array $addressData): void
+    {
+        $address = $customer->customerAddress()->create([
+            'street' => $addressData['street'],
+            'suite' => $addressData['suite'],
+            'city' => $addressData['city'],
+            'zipcode' => $addressData['zipcode'],
+        ]);
+
+        if (!empty($addressData['geo'])) {
+            $this->createCustomerGeo($address, $addressData['geo']);
+        }
+    }
+
+    private function createCustomerGeo(CustomerAddress $address, array $geoData): void
+    {
+        $address->customerGeo()->create([
+            'lat' => $geoData['lat'],
+            'lng' => $geoData['lng'],
+        ]);
+    }
+
+    private function createCustomerCompany(Customer $customer, array $companyData): void
     {
         $customer->customerCompany()->create([
-            'name' => $data['name'],
-            'catch_phrase' => $data['catchPhrase'],
-            'bs' => $data['bs']
+            'name' => $companyData['name'],
+            'catch_phrase' => $companyData['catchPhrase'],
+            'bs' => $companyData['bs'],
         ]);
     }
-
 
     public function updateCustomer(Customer $customer, array $validatedData): void
     {
-        $customer->update([
-            'name' => $validatedData['name'] ?? $customer->name,
-            'username' => $validatedData['username'] ?? $customer->username,
-            'email' => $validatedData['email'] ?? $customer->email,
-            'phone' => $validatedData['phone'] ?? $customer->phone,
-            'website' => $validatedData['website'] ?? $customer->website
-        ]);
+        $this->updateCustomerDetails($customer, $validatedData);
 
-        if (isset($validatedData['address'])) {
-            $customer->customerAddress()->updateOrCreate([], [
-                'street' => $validatedData['address']['street'] ?? $customer->address->street,
-                'suite' => $validatedData['address']['suite'] ?? $customer->address->suite,
-                'city' => $validatedData['address']['city'] ?? $customer->address->city,
-                'zipcode' => $validatedData['address']['zipcode'] ?? $customer->address->zipcode
-            ]);
-
-            if (isset($validatedData['address']['geo'])) {
-                $customer->customerAddress->customerGeo()->updateOrCreate([], [
-                    'lat' => $validatedData['address']['geo']['lat'] ?? $customer->address->geo->lat,
-                    'lng' => $validatedData['address']['geo']['lng'] ?? $customer->address->geo->lng
-                ]);
-            }
+        if (!empty($validatedData['address'])) {
+            $this->updateCustomerAddressWithGeo($customer, $validatedData['address']);
         }
 
-        if (isset($validatedData['company'])) {
-            $customer->customerCompany()->updateOrCreate([], [
-                'name' => $validatedData['company']['name'] ?? $customer->company->name,
-                'catch_phrase' => $validatedData['company']['catchPhrase'] ?? $customer->company->catch_phrase,
-                'bs' => $validatedData['company']['bs'] ?? $customer->company->bs
-            ]);
+        if (!empty($validatedData['company'])) {
+            $this->updateCustomerCompany($customer, $validatedData['company']);
         }
     }
 
-//    public function oldQuery(Request $request): LengthAwarePaginator
-//    {
-//        $search = trim($request->get('search'));
-//        $searchPattern = '%' . $search . '%';
-//        return Customer::query()
-//            ->when($search, function ($query) use ($searchPattern) {
-//                $query->where('id', 'like', $searchPattern)
-//                    ->orWhere('name', 'like', $searchPattern)
-//                    ->orWhere('username', 'like', $searchPattern)
-//                    ->orWhere('email', 'like', $searchPattern)
-//                    ->orWhere('phone', 'like', $searchPattern)
-//                    ->orWhere('website', 'like', $searchPattern)
-//                    ->orWhereHas('customerAddress', function ($query) use ($searchPattern) {
-//                        $query->where(function ($query) use ($searchPattern) {
-//                            $query->where('street', 'like', $searchPattern)
-//                                ->orWhere('suite', 'like', $searchPattern)
-//                                ->orWhere('city', 'like', $searchPattern)
-//                                ->orWhere('zipcode', 'like', $searchPattern);
-//                        });
-//                    })
-//                    ->orWhereHas('customerCompany', function ($query) use ($searchPattern) {
-//                        $query->where(function ($query) use ($searchPattern) {
-//                            $query->where('name', 'like', $searchPattern)
-//                                ->orWhere('catch_phrase', 'like', $searchPattern)
-//                                ->orWhere('bs', 'like', $searchPattern);
-//                        });
-//                    })
-//                    ->orWhereHas('customerAddress.customerGeo', function ($query) use ($searchPattern) {
-//                        $query->where('lat', 'like', $searchPattern)
-//                            ->orWhere('lng', 'like', $searchPattern);
-//                    });
-//            })
-//            ->with(['customerAddress', 'customerCompany', 'customerAddress.customerGeo'])
-//            ->orderBy('id', 'desc')
-//            ->paginate($request->get('perPage'))
-//            ->withQueryString();
-//    }
+    private function updateCustomerDetails(Customer $customer, array $data): void
+    {
+        $customer->update([
+            'name' => $data['name'] ?? $customer->name,
+            'username' => $data['username'] ?? $customer->username,
+            'email' => $data['email'] ?? $customer->email,
+            'phone' => $data['phone'] ?? $customer->phone,
+            'website' => $data['website'] ?? $customer->website,
+        ]);
+    }
+
+    private function updateCustomerAddressWithGeo(Customer $customer, array $addressData): void
+    {
+        $address = $customer->customerAddress()->updateOrCreate([], [
+            'street' => $addressData['street'] ?? $customer->customerAddress->street ?? null,
+            'suite' => $addressData['suite'] ?? $customer->customerAddress->suite ?? null,
+            'city' => $addressData['city'] ?? $customer->customerAddress->city ?? null,
+            'zipcode' => $addressData['zipcode'] ?? $customer->customerAddress->zipcode ?? null,
+        ]);
+
+        if (!empty($addressData['geo'])) {
+            $this->updateCustomerGeo($address, $addressData['geo']);
+        }
+    }
+
+    private function updateCustomerGeo(CustomerAddress $address, array $geoData): void
+    {
+        $address->customerGeo()->updateOrCreate([], [
+            'lat' => $geoData['lat'] ?? $address->customerGeo->lat ?? null,
+            'lng' => $geoData['lng'] ?? $address->customerGeo->lng ?? null,
+        ]);
+    }
+
+    private function updateCustomerCompany(Customer $customer, array $companyData): void
+    {
+        $customer->customerCompany()->updateOrCreate([], [
+            'name' => $companyData['name'] ?? $customer->customerCompany->name ?? null,
+            'catch_phrase' => $companyData['catchPhrase'] ?? $customer->customerCompany->catch_phrase ?? null,
+            'bs' => $companyData['bs'] ?? $customer->customerCompany->bs ?? null,
+        ]);
+    }
+
+
 }

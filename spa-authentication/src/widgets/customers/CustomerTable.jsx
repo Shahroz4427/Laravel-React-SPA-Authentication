@@ -1,7 +1,9 @@
+import ActionsDropDown from "../../components/ActionsDropDown";
 import SortableHeader from "../../components/SortableHeader";
 import Pagination from "../../components/Pagination";
 import { useState } from "react";
 import '../../table.css'
+import { Link } from "react-router-dom";
 
 const CustomerTable = ({
     data,
@@ -148,28 +150,16 @@ const CustomerTable = ({
                                     <td>{customer.email}</td>
                                     <td>{customer.phone}</td>
                                     <td>
-                                        <div className="btn-group">
-                                            <button
-                                                type="button"
-                                                className="btn btn-primary btn-icon rounded-pill dropdown-toggle hide-arrow"
-                                                data-bs-toggle="dropdown"
-                                                aria-expanded="false"
-                                            >
-                                                <i className="bx bx-dots-vertical-rounded" />
-                                            </button>
-                                            <ul className="dropdown-menu dropdown-menu-end">
-                                                <li>
-                                                    <a className="dropdown-item" >
-                                                        Edit
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a onClick={() => onDeleteAlert(customer.id)} className="dropdown-item" >
-                                                        Delete
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                        </div>
+                                        <ActionsDropDown>
+                                            <li>
+                                                <Link className="dropdown-item" to={`/customers/${customer.id}/edit`}>Edit</Link>
+                                            </li>
+                                            <li>
+                                                <a onClick={() => onDeleteAlert(customer.id)} className=" dropdown-item" >
+                                                    Delete
+                                                </a>
+                                            </li>
+                                        </ActionsDropDown>
                                     </td>
                                 </tr>
                             ))
@@ -178,9 +168,9 @@ const CustomerTable = ({
                 </table>
             </div>
             <div className="card-footer">
-                <div className="row">
-                    <div className="col-md-6 py-2">
-                        <span>
+                <div className="row" >
+                    <div className="col-md-6">
+                        <span style={{ lineHeight: '3' }}>
                             Showing {meta?.from || 0} to {meta?.to || 0} of {meta?.total || 0} entries
                         </span>
                     </div>
@@ -197,6 +187,7 @@ const CustomerTable = ({
                         />
                     </div>
                 </div>
+
             </div>
         </div>
     );

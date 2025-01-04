@@ -1,11 +1,10 @@
 <?php
 
 
+use App\Events\MyEvent;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return response()->noContent();
-});
+
 
 
 
