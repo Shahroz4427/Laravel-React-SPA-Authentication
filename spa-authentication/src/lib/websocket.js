@@ -16,7 +16,7 @@ const echo = new Echo({
     authorizer: (channel, options) => {
         return {
             authorize: (socketId, callback) => {
-                axios.post('/api/broadcasting/auth', {
+                axios.post('/broadcasting/auth', {
                     socket_id: socketId,
                     channel_name: channel.name
                 })

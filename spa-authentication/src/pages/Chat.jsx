@@ -1,12 +1,14 @@
 
 import { usePerfectScrollbar } from '../hooks/usePerfectScroller';
 import useDocumentTitle from "../hooks/useDocumentTitle";
+import { useEffect, useState } from 'react';
+import echo from '../lib/websocket.js'
+import { axios } from '../lib/axios';
 import Layout from '../layout/Layout'
-import { useEffect } from 'react';
-import echo from '../lib/websocket';
 import './../chat.css'
 
 const Chat = () => {
+
 
     useDocumentTitle('Chat');
 
@@ -16,22 +18,139 @@ const Chat = () => {
         minScrollbarLength: 20,
     });
 
+    const [contacts, setContacts] = useState([]);
+
+    const [authenticatedUser, setAuthenticatedUser] = useState();
+
+    const [selectedUser, setSelectedUser] = useState("");
+
+    const [messageInput, setMessageInput] = useState("")
 
     useEffect(() => {
-        const channel = echo.private(`my-channel.${1}`);
+        async function fetchContacts() {
+            try {
+                const response = await axios.get('api/chat/contacts');
+                if (response.status === 200) {
+                    setContacts(response.data);
+                    if (response.data.length > 0) {
+                        setSelectedUser(response.data[0]);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching contacts:', error);
+            }
+        }
 
-        console.log(channel);
+        fetchContacts();
+    }, []);
 
-        channel.listen('.public-event', (event) => {
+    useEffect(() => {
+        const authUser = localStorage.getItem("authUser");
+        setAuthenticatedUser(JSON.parse(authUser));
+    }, []);
+
+    async function createMessage(data) {
+        try {
+            const response = await axios.post('api/chat/send-message', data);
+            if (response.status === 200) {
+                return response.data;
+            }
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+
+    const handleAddMessage = async () => {
+        const newMessage = {
+            id: crypto.randomUUID(),
+            from_id: authenticatedUser.id,
+            to_id: selectedUser.id,
+            body: messageInput,
+            attachment: null,
+            seen: 0,
+            created_at: new Date().toISOString(),
+            updated_at: null,
+        };
+
+        setContacts((prevData) =>
+            prevData.map((user) =>
+                user.id === selectedUser.id
+                    ? {
+                        ...user,
+                        messages: [...user.messages, newMessage],
+                    }
+                    : user
+            )
+        );
+
+        try {
+            const response = await createMessage({
+                from_id: authenticatedUser.id,
+                to_id: selectedUser.id,
+                body: messageInput,
+            });
+
+            setContacts((prevData) =>
+                prevData.map((user) =>
+                    user.id === selectedUser.id
+                        ? {
+                            ...user,
+                            messages: user.messages.map((message) =>
+                                message.id === newMessage.id
+                                    ? { ...message, id: response.id }
+                                    : message
+                            ),
+                        }
+                        : user
+                )
+            );
+        } catch (error) {
+            console.error("Error sending message:", error);
+            setContacts((prevData) =>
+                prevData.map((user) =>
+                    user.id === selectedUser.id
+                        ? {
+                            ...user,
+                            messages: user.messages.filter(
+                                (message) => message.id !== newMessage.id
+                            ),
+                        }
+                        : user
+                )
+            );
+        }
+    };
+
+    const chatContainerRef = usePerfectScrollbar({
+        wheelSpeed: 1,
+        wheelPropagation: false,
+        minScrollbarLength: 20,
+    });
+
+    useEffect(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [contacts, selectedUser]);
+
+
+    useEffect(() => {
+        const authUser = localStorage.getItem("authUser");
+
+        const user = JSON.parse(authUser);
+
+        const channel = echo.private(`chat.${user.id}`);
+
+        channel.listen('.message.send', (event) => {
             console.log(event);
         });
 
         return () => {
-            echo.leave(`my-channel.${1}`);
-            console.log('Left the channel');
+            echo.leave(`chat.${user.id}`);
         };
     }, []);
-    
+
 
     return (
         <Layout>
@@ -176,20 +295,6 @@ const Chat = () => {
                                     Logout
                                 </button>
                             </div>
-                            <div className="ps__rail-x" style={{ left: 0, bottom: 0 }}>
-                                <div
-                                    className="ps__thumb-x"
-                                    tabIndex={0}
-                                    style={{ left: 0, width: 0 }}
-                                />
-                            </div>
-                            <div className="ps__rail-y" style={{ top: 0, height: 572, right: 0 }}>
-                                <div
-                                    className="ps__thumb-y"
-                                    tabIndex={0}
-                                    style={{ top: 0, height: 539 }}
-                                />
-                            </div>
                         </div>
                     </div>
                     <div
@@ -241,70 +346,45 @@ const Chat = () => {
                                 <li className="chat-contact-list-item chat-list-item-0 d-none">
                                     <h6 className="text-muted mb-0">No Chats Found</h6>
                                 </li>
-                                <li className="chat-contact-list-item mb-1">
-                                    <a className="d-flex align-items-center">
-                                        <div className="flex-shrink-0 avatar avatar-online">
-                                            <img
-                                                src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                alt="Avatar"
-                                                className="rounded-circle"
-                                            />
-                                        </div>
-                                        <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <div className="d-flex justify-content-between align-items-center">
-                                                <h6 className="chat-contact-name text-truncate m-0 fw-normal">
-                                                    Waldemar Mannering
-                                                </h6>
-                                                <small className="text-muted">5 Minutes</small>
-                                            </div>
-                                            <small className="chat-contact-status text-truncate">
-                                                Refer friends. Get rewards.
-                                            </small>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li className="chat-contact-list-item active mb-1">
-                                    <a className="d-flex align-items-center">
-                                        <div className="flex-shrink-0 avatar avatar-offline">
-                                            <img
-                                                src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                alt="Avatar"
-                                                className="rounded-circle"
-                                            />
-                                        </div>
-                                        <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <div className="d-flex justify-content-between align-items-center">
-                                                <h6 className="chat-contact-name text-truncate fw-normal m-0">
-                                                    Felecia Rower
-                                                </h6>
-                                                <small className="text-muted">30 Minutes</small>
-                                            </div>
-                                            <small className="chat-contact-status text-truncate">
-                                                I will purchase it for sure. 👍
-                                            </small>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li className="chat-contact-list-item mb-0">
-                                    <a className="d-flex align-items-center">
-                                        <div className="flex-shrink-0 avatar avatar-busy">
-                                            <span className="avatar-initial rounded-circle bg-label-success">
-                                                CM
-                                            </span>
-                                        </div>
-                                        <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <div className="d-flex justify-content-between align-items-center">
-                                                <h6 className="chat-contact-name text-truncate fw-normal m-0">
-                                                    Calvin Moore
-                                                </h6>
-                                                <small className="text-muted">1 Day</small>
-                                            </div>
-                                            <small className="chat-contact-status text-truncate">
-                                                If it takes long you can mail inbox user
-                                            </small>
-                                        </div>
-                                    </a>
-                                </li>
+                                {
+                                    contacts.map((user, index) => {
+                                        const latestMessage = user.messages.length > 0
+                                            ? [...user.messages].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+                                            : null;
+                                        return (
+                                            <li
+                                                onClick={() => setSelectedUser(user)}
+                                                key={index}
+                                                className={`chat-contact-list-item mb-1 ${selectedUser?.id === user.id ? "active" : ""}`}
+                                            >
+                                                <a className="d-flex align-items-center">
+                                                    <div className={`flex-shrink-0 avatar ${user.active_status ? "avatar-online" : "avatar-offline"}`}>
+                                                        <img
+                                                            src="https://bootdey.com/img/Content/avatar/avatar2.png"
+                                                            alt="Avatar"
+                                                            className="rounded-circle"
+                                                        />
+                                                    </div>
+                                                    <div className="chat-contact-info flex-grow-1 ms-4">
+                                                        <div className="d-flex justify-content-between align-items-center">
+                                                            <h6 className="chat-contact-name text-truncate m-0 fw-normal">
+                                                                {user.name}
+                                                            </h6>
+                                                            <small className="text-muted">
+                                                                {latestMessage ? new Date(latestMessage.created_at).toLocaleTimeString() : "No time"}
+                                                            </small>
+                                                        </div>
+                                                        <small className="chat-contact-status text-truncate">
+                                                            {latestMessage
+                                                                ? latestMessage.body
+                                                                : "No messages"}
+                                                        </small>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                        );
+                                    })
+                                }
                             </ul>
                             <ul
                                 className="list-unstyled chat-contact-list mb-0 py-2"
@@ -544,7 +624,7 @@ const Chat = () => {
                                             />
                                         </div>
                                         <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <h6 className="m-0 fw-normal">Felecia Rower</h6>
+                                            <h6 className="m-0 fw-normal">{selectedUser.name}</h6>
                                             <small className="user-status text-body">
                                                 NextJS developer
                                             </small>
@@ -588,357 +668,55 @@ const Chat = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className="chat-history-body ps ps--active-y">
+                            <div ref={chatContainerRef} className="chat-history-body ps ps--active-y">
                                 <ul className="list-unstyled chat-history">
-                                    <li className="chat-message chat-message-right">
-                                        <div className="d-flex overflow-hidden">
-                                            <div className="chat-message-wrapper flex-grow-1">
-                                                <div className="chat-message-text">
-                                                    <p className="mb-0">
-                                                        How can we help? We're here for you! 😄
-                                                    </p>
-                                                </div>
-                                                <div className="text-end text-muted mt-1">
-                                                    <i className="bx bx-check-double bx-16px text-success me-1" />
-                                                    <small>10:00 AM</small>
-                                                </div>
-                                            </div>
-                                            <div className="user-avatar flex-shrink-0 ms-4">
-                                                <div className="avatar avatar-sm">
-                                                    <img
-                                                        src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                        alt="Avatar"
-                                                        className="rounded-circle"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li className="chat-message">
-                                        <div className="d-flex overflow-hidden">
-                                            <div className="user-avatar flex-shrink-0 me-4">
-                                                <div className="avatar avatar-sm">
-                                                    <img
-                                                        src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                        alt="Avatar"
-                                                        className="rounded-circle"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="chat-message-wrapper flex-grow-1">
-                                                <div className="chat-message-text">
-                                                    <p className="mb-0">
-                                                        Hey John, I am looking for the best admin template.
-                                                    </p>
-                                                    <p className="mb-0">
-                                                        Could you please help me to find it out? 🤔
-                                                    </p>
-                                                </div>
-                                                <div className="chat-message-text mt-2">
-                                                    <p className="mb-0">
-                                                        It should be Bootstrap 5 compatible.
-                                                    </p>
-                                                </div>
-                                                <div className="text-muted mt-1">
-                                                    <small>10:02 AM</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li className="chat-message chat-message-right">
-                                        <div className="d-flex overflow-hidden">
-                                            <div className="chat-message-wrapper flex-grow-1">
-                                                <div className="chat-message-text">
-                                                    <p className="mb-0">
-                                                        sneat has all the components you'll ever need in a app.
-                                                    </p>
-                                                </div>
-                                                <div className="text-end text-muted mt-1">
-                                                    <i className="bx bx-check-double bx-16px text-success me-1" />
-                                                    <small>10:03 AM</small>
-                                                </div>
-                                            </div>
-                                            <div className="user-avatar flex-shrink-0 ms-4">
-                                                <div className="avatar avatar-sm">
-                                                    <img
-                                                        src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                        alt="Avatar"
-                                                        className="rounded-circle"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li className="chat-message">
-                                        <div className="d-flex overflow-hidden">
-                                            <div className="user-avatar flex-shrink-0 me-4">
-                                                <div className="avatar avatar-sm">
-                                                    <img
-                                                        src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                        alt="Avatar"
-                                                        className="rounded-circle"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="chat-message-wrapper flex-grow-1">
-                                                <div className="chat-message-text">
-                                                    <p className="mb-0">Looks clean and fresh UI. 😃</p>
-                                                </div>
-                                                <div className="chat-message-text mt-2">
-                                                    <p className="mb-0">It's perfect for my next project.</p>
-                                                </div>
-                                                <div className="chat-message-text mt-2">
-                                                    <p className="mb-0">How can I purchase it?</p>
-                                                </div>
-                                                <div className="text-muted mt-1">
-                                                    <small>10:05 AM</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li className="chat-message chat-message-right">
-                                        <div className="d-flex overflow-hidden">
-                                            <div className="chat-message-wrapper flex-grow-1">
-                                                <div className="chat-message-text">
-                                                    <p className="mb-0">Thanks, you can purchase it.</p>
-                                                </div>
-                                                <div className="text-end text-muted mt-1">
-                                                    <i className="bx bx-check-double bx-16px text-success me-1" />
-                                                    <small>10:06 AM</small>
-                                                </div>
-                                            </div>
-                                            <div className="user-avatar flex-shrink-0 ms-4">
-                                                <div className="avatar avatar-sm">
-                                                    <img
-                                                        src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                        alt="Avatar"
-                                                        className="rounded-circle"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li className="chat-message">
-                                        <div className="d-flex overflow-hidden">
-                                            <div className="user-avatar flex-shrink-0 me-4">
-                                                <div className="avatar avatar-sm">
-                                                    <img
-                                                        src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                        alt="Avatar"
-                                                        className="rounded-circle"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="chat-message-wrapper flex-grow-1">
-                                                <div className="chat-message-text">
-                                                    <p className="mb-0">I will purchase it for sure. 👍</p>
-                                                </div>
-                                                <div className="chat-message-text mt-2">
-                                                    <p className="mb-0">Thanks.</p>
-                                                </div>
-                                                <div className="text-muted mt-1">
-                                                    <small>10:08 AM</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li className="chat-message chat-message-right">
-                                        <div className="d-flex overflow-hidden">
-                                            <div className="chat-message-wrapper flex-grow-1">
-                                                <div className="chat-message-text">
-                                                    <p className="mb-0">Great, Feel free to get in touch.</p>
-                                                </div>
-                                                <div className="text-end text-muted mt-1">
-                                                    <i className="bx bx-check-double bx-16px text-success me-1" />
-                                                    <small>10:10 AM</small>
-                                                </div>
-                                            </div>
-                                            <div className="user-avatar flex-shrink-0 ms-4">
-                                                <div className="avatar avatar-sm">
-                                                    <img
-                                                        src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                        alt="Avatar"
-                                                        className="rounded-circle"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li className="chat-message">
-                                        <div className="d-flex overflow-hidden">
-                                            <div className="user-avatar flex-shrink-0 me-4">
-                                                <div className="avatar avatar-sm">
-                                                    <img
-                                                        src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                        alt="Avatar"
-                                                        className="rounded-circle"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="chat-message-wrapper flex-grow-1">
-                                                <div className="chat-message-text">
-                                                    <p className="mb-0">
-                                                        Do you have design files for sneat?
-                                                    </p>
-                                                </div>
-                                                <div className="text-muted mt-1">
-                                                    <small>10:15 AM</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li className="chat-message chat-message-right">
-                                        <div className="d-flex overflow-hidden">
-                                            <div className="chat-message-wrapper flex-grow-1 w-50">
-                                                <div className="chat-message-text">
-                                                    <p className="mb-0">
-                                                        Yes that's correct documentation file, Design files are
-                                                        included with the template.
-                                                    </p>
-                                                </div>
-                                                <div className="text-end text-muted mt-1">
-                                                    <i className="bx bx-check-double bx-16px me-1" />
-                                                    <small>10:15 AM</small>
-                                                </div>
-                                            </div>
-                                            <div className="user-avatar flex-shrink-0 ms-4">
-                                                <div className="avatar avatar-sm">
-                                                    <img
-                                                        src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                        alt="Avatar"
-                                                        className="rounded-circle"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
+                                    {
+                                        contacts && Array.isArray(contacts) && contacts.length > 0 && (
+                                            contacts.filter(contact => contact.id === selectedUser.id).map((contact) => (
+                                                contact.messages && Array.isArray(contact.messages) && contact.messages.length > 0 && (
+                                                    contact.messages
+                                                        .sort((a, b) => a.created_at > b.created_at ? 1 : -1)
+                                                        .map((message, index) => (
+                                                            <li key={message.id} className={`chat-message ${message.from_id === authenticatedUser.id ? "chat-message-right" : ""}`}>
+                                                                <div className="d-flex overflow-hidden">
+                                                                    <div className="chat-message-wrapper flex-grow-1">
+                                                                        <div className="chat-message-text">
+                                                                            <p className="mb-0">
+                                                                                {message.body}
+                                                                            </p>
+                                                                        </div>
+                                                                        <div className="text-end text-muted mt-1">
+                                                                            <i className={`bx bx-check-double bx-16px me-1 ${message.seen && "text-success"} `} />
+                                                                            <small>10:00 AM</small>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="user-avatar flex-shrink-0 ms-4">
+                                                                        <div className="avatar avatar-sm">
+                                                                            <img
+                                                                                src="https://bootdey.com/img/Content/avatar/avatar2.png"
+                                                                                alt="Avatar"
+                                                                                className="rounded-circle"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </li>
+                                                        ))
+                                                )
+                                            ))
+                                        )
+                                    }
                                 </ul>
-                                <div className="ps__rail-x" style={{ left: 0, bottom: "-615px" }}>
-                                    <div
-                                        className="ps__thumb-x"
-                                        tabIndex={0}
-                                        style={{ left: 0, width: 0 }}
-                                    />
-                                </div>
-                                <div
-                                    className="ps__rail-y"
-                                    style={{ top: 615, height: 601, right: 0 }}
-                                >
-                                    <div
-                                        className="ps__thumb-y"
-                                        tabIndex={0}
-                                        style={{ top: 304, height: 297 }}
-                                    />
-                                </div>
                             </div>
                             <div className="chat-history-footer shadow-xs">
                                 <div className="input-group">
-                                    <input type="text" className="form-control" placeholder="Message" aria-label="Message" aria-describedby="button-addon2" />
-                                    <button className="btn btn-outline-primary" type="button" id="button-addon2">Send</button>
+                                    <input onChange={(e) => setMessageInput(e.target.value)} value={messageInput} type="text" className="form-control" placeholder="Message" aria-label="Message" aria-describedby="button-addon2" />
+                                    <button onClick={() => { handleAddMessage(), setMessageInput(""); }} className="btn btn-outline-primary" type="button" id="button-addon2">Send</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div
-                        className="col app-chat-sidebar-right app-sidebar overflow-hidden"
-                        id="app-chat-sidebar-right"
-                    >
-                        <div className="sidebar-header d-flex flex-column justify-content-center align-items-center flex-wrap px-6 pt-12">
-                            <div className="avatar avatar-xl avatar-online chat-sidebar-avatar">
-                                <img
-                                    src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                    alt="Avatar"
-                                    className="rounded-circle"
-                                />
-                            </div>
-                            <h5 className="mt-4 mb-0">Felecia Rower</h5>
-                            <span>NextJS Developer</span>
-                            <i
-                                className="bx bx-x bx-lg cursor-pointer close-sidebar d-block"
-                                data-bs-toggle="sidebar"
-                                data-overlay=""
-                                data-target="#app-chat-sidebar-right"
-                            />
-                        </div>
-                        <div className="sidebar-body p-6 pt-0 ps ps--active-y">
-                            <div className="my-6">
-                                <p className="text-uppercase mb-1 text-muted">About</p>
-                                <p className="mb-0">
-                                    It is a long established fact that a reader will be distracted by
-                                    the readable content .
-                                </p>
-                            </div>
-                            <div className="my-6">
-                                <p className="text-uppercase mb-1 text-muted">
-                                    Personal Information
-                                </p>
-                                <ul className="list-unstyled d-grid gap-4 mb-0 ms-2 py-2 text-heading">
-                                    <li className="d-flex align-items-center">
-                                        <i className="bx bx-envelope" />
-                                        <span className="align-middle ms-2">josephGreen@email.com</span>
-                                    </li>
-                                    <li className="d-flex align-items-center">
-                                        <i className="bx bx-phone-call" />
-                                        <span className="align-middle ms-2">+1(123) 456 - 7890</span>
-                                    </li>
-                                    <li className="d-flex align-items-center">
-                                        <i className="bx bx-time-five" />
-                                        <span className="align-middle ms-2">Mon - Fri 10AM - 8PM</span>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div className="my-6">
-                                <p className="text-uppercase text-muted mb-1">Options</p>
-                                <ul className="list-unstyled d-grid gap-4 ms-2 py-2 text-heading">
-                                    <li className="cursor-pointer d-flex align-items-center">
-                                        <i className="bx bx-bookmark" />
-                                        <span className="align-middle ms-2">Add Tag</span>
-                                    </li>
-                                    <li className="cursor-pointer d-flex align-items-center">
-                                        <i className="bx bx-star" />
-                                        <span className="align-middle ms-2">Important Contact</span>
-                                    </li>
-                                    <li className="cursor-pointer d-flex align-items-center">
-                                        <i className="bx bx-image-alt" />
-                                        <span className="align-middle ms-2">Shared Media</span>
-                                    </li>
-                                    <li className="cursor-pointer d-flex align-items-center">
-                                        <i className="bx bx-trash" />
-                                        <span className="align-middle ms-2">Delete Contact</span>
-                                    </li>
-                                    <li className="cursor-pointer d-flex align-items-center">
-                                        <i className="bx bx-block" />
-                                        <span className="align-middle ms-2">Block Contact</span>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div className="d-flex mt-6">
-                                <button
-                                    className="btn btn-danger w-100"
-                                    data-bs-toggle="sidebar"
-                                    data-overlay=""
-                                    data-target="#app-chat-sidebar-right"
-                                >
-                                    Delete Contact
-                                    <i className="bx bx-trash bx-sm ms-2" />
-                                </button>
-                            </div>
-                            <div className="ps__rail-x" style={{ left: 0, bottom: 0 }}>
-                                <div
-                                    className="ps__thumb-x"
-                                    tabIndex={0}
-                                    style={{ left: 0, width: 0 }}
-                                />
-                            </div>
-                            <div className="ps__rail-y" style={{ top: 0, height: 575, right: 0 }}>
-                                <div
-                                    className="ps__thumb-y"
-                                    tabIndex={0}
-                                    style={{ top: 0, height: 563 }}
-                                />
-                            </div>
-                        </div>
-                    </div>
+
                     <div className="app-overlay" />
                 </div>
             </div>

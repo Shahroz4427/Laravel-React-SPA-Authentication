@@ -87,10 +87,10 @@ const router = createBrowserRouter([
         path: "/customers/:id/edit",
         element: <ProtectedRoute />,
         children: [
-            { path: "/customers/:id/edit", element: <CustomerEdit/> },
+            { path: "/customers/:id/edit", element: <CustomerEdit /> },
         ],
     }
- 
+
 ], {
     future: {
         v7_skipActionErrorRevalidation: true,
@@ -106,21 +106,19 @@ const router = createBrowserRouter([
 
 
 createRoot(document.getElementById('root')).render(
-    <StrictMode>
-        <QueryClientProvider client={queryClient}>
-            <RouterProvider
-                router={router}
-                future={{
-                    v7_skipActionErrorRevalidation: true,
-                    v7_skipActionStatusRevalidation: true,
-                    v7_startTransition: true,
-                    v7_relativeSplatPath: true,
-                    v7_fetcherPersist: true,
-                    v7_normalizeFormMethod: true,
-                    v7_partialHydration: true,
-                }}
-            />
-            <ReactQueryDevtools initialIsOpen={false} />
-        </QueryClientProvider>
-    </StrictMode>
+    <QueryClientProvider client={queryClient}>
+        <RouterProvider
+            router={router}
+            future={{
+                v7_skipActionErrorRevalidation: true,
+                v7_skipActionStatusRevalidation: true,
+                v7_startTransition: true,
+                v7_relativeSplatPath: true,
+                v7_fetcherPersist: true,
+                v7_normalizeFormMethod: true,
+                v7_partialHydration: true,
+            }}
+        />
+        <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
 );

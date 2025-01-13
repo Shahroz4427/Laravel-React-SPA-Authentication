@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use JetBrains\PhpStorm\ArrayShape;
 
 /**
  * @property mixed $street
@@ -18,7 +19,7 @@ class CustomerAddressResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-    public function toArray(Request $request): array
+    #[ArrayShape(['street' => "mixed", 'suite' => "mixed", 'city' => "mixed", 'zipcode' => "mixed", 'geo' => "\App\Http\Resources\CustomerGeoResource"])] public function toArray(Request $request): array
     {
         return [
             'street' => $this->street,

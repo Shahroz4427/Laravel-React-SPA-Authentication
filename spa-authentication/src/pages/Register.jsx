@@ -31,7 +31,7 @@ const Register = () => {
 
     async function userRegister(data) {
         try {
-            const response = await axios.post('/register', data);
+            const response = await axios.post('register', data);
             if (response.status === 204) {
                 navigate('/login');
             }

@@ -2,9 +2,9 @@
 
 namespace App\Events;
 
+use App\Models\ChatMessage;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -15,41 +15,34 @@ class MyEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public int $userId;
+    public int $id;
 
-    /**
-     * Create a new event instance.
-     */
-    public function __construct(int $userId)
+    public $message;
+
+    public function __construct(ChatMessage $message, int $id)
     {
-        $this->userId = $userId;
+        $this->id = $id;
+        $this->message = $message;
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return PrivateChannel
-     */
     public function broadcastOn(): PrivateChannel
     {
-        return new PrivateChannel('my-channel.' . $this->userId);
+        return new PrivateChannel('chat.' . $this->id);
     }
 
-    /**
-     * The event's broadcast name.
-     */
     public function broadcastAs(): string
     {
-        return 'public-event';
+        return 'message.send';
     }
 
-    /**
-     * Get the data to broadcast.
-     *
-     * @return array<string, mixed>
-     */
-    #[ArrayShape(['message' => "string"])] public function broadcastWith(): array
+    #[ArrayShape(['id' => "int", 'message' => "array"])]
+    public function broadcastWith(): array
     {
-        return ['message' => 'broadcasting working'];
+        return [
+            'id' => $this->id,
+            'message' => $this->message->toArray(),
+        ];
     }
+
+
 }

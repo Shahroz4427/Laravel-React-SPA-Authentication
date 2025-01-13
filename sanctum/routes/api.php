@@ -2,16 +2,14 @@
 
 
 use App\Http\Controllers\Api\V1\AlbumController;
+use App\Http\Controllers\Api\V1\ChatController;
 use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\PhotoController;
 use App\Http\Controllers\Api\V1\PostController;
 use App\Http\Controllers\Api\V1\TodoController;
-use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
-
-
 
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
@@ -25,6 +23,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('photos', PhotoController::class);
     Route::apiResource('todos', TodoController::class);
     Route::apiResource('customers', CustomerController::class);
+    Route::get('chat/contacts', [ChatController::class, 'contacts']);
+    Route::post('chat/send-message',[ChatController::class,'sendMessage']);
 });
 
 

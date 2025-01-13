@@ -30,7 +30,7 @@ const Login = () => {
 
     async function setAuthUser() {
         try {
-            const response = await axios.get('/api/user');
+            const response = await axios.get('api/user');
             if (response.status === 200) {
                 localStorage.setItem('authUser', JSON.stringify(response.data));
             }
@@ -43,7 +43,7 @@ const Login = () => {
 
     async function userLogin(data) {
         try {
-            const response = await axios.post('/login', data);
+            const response = await axios.post('login', data);
             if (response.status === 204) {
                 await setAuthUser();
                 navigate('/');

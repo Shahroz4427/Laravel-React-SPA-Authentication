@@ -5,7 +5,7 @@ import { axios } from "../lib/axios";
 class CustomersService {
 
     static getCustomers = async (query) => {
-        const response = await axios.get("/api/customers", { params: query });
+        const response = await axios.get("api/customers", { params: query });
         return response.data;
     };
 
@@ -19,7 +19,7 @@ class CustomersService {
 
     static destroyCustomer = async (id) => {
         try {
-            const response = await axios.delete(`/api/customers/${id}`)
+            const response = await axios.delete(`api/customers/${id}`)
             if (response.status === 200) {
                 return response;
             }
@@ -30,7 +30,7 @@ class CustomersService {
 
     static createCustomer = async (data) => {
         try {
-            const response = await axios.post('/api/customers/', data);
+            const response = await axios.post('api/customers', data);
             if (response.status === 201) {
                 return response;
             }

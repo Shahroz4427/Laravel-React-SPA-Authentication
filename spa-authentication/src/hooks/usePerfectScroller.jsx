@@ -1,12 +1,14 @@
-import  { useEffect, useRef } from 'react';
-import  PerfectScrollbar from 'perfect-scrollbar';
+import { useEffect, useRef } from 'react';
+import PerfectScrollbar from 'perfect-scrollbar';
 import 'perfect-scrollbar/css/perfect-scrollbar.css';
 
 export const usePerfectScrollbar = (options = {}) => {
     const scrollContainerRef = useRef(null);
+
     useEffect(() => {
         if (!scrollContainerRef.current) return;
         const ps = new PerfectScrollbar(scrollContainerRef.current, options);
+
         const preventScrollPropagation = (e) => {
             const container = scrollContainerRef.current;
             if (!container) return;
@@ -19,8 +21,10 @@ export const usePerfectScrollbar = (options = {}) => {
                 e.preventDefault();
             }
         };
+
         const containerElement = scrollContainerRef.current;
         containerElement.addEventListener('wheel', preventScrollPropagation);
+
         return () => {
             ps.destroy();
             containerElement.removeEventListener('wheel', preventScrollPropagation);
