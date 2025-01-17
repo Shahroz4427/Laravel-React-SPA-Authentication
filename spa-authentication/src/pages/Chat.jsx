@@ -1,71 +1,76 @@
 
-import { usePerfectScrollbar } from '../hooks/usePerfectScroller';
-import useDocumentTitle from "../hooks/useDocumentTitle";
+import useDocumentTitle from '../hooks/useDocumentTitle.jsx';
+import ChatContacts from '../widgets/chat/ChatContacts.jsx';
+import ChatMessages from '../widgets/chat/ChatMessages.jsx';
 import { useEffect, useState } from 'react';
+import { axios } from '../lib/axios.js';
 import echo from '../lib/websocket.js'
-import { axios } from '../lib/axios';
 import Layout from '../layout/Layout'
 import './../chat.css'
 
 const Chat = () => {
 
-
     useDocumentTitle('Chat');
 
-    const scrollContainerRef = usePerfectScrollbar({
-        wheelSpeed: 1,
-        wheelPropagation: false,
-        minScrollbarLength: 20,
-    });
-
+    const [chatrooms, setChatRooms] = useState([]);
+    const [messages, setMessages] = useState([]);
+    const [messageToRender, setMessageToRender] = useState([]);
+    const [selectedChatRoom, setSelectedChatRoom] = useState({});
+    const [messageInput, setMessageInput] = useState("");
     const [contacts, setContacts] = useState([]);
-
-    const [authenticatedUser, setAuthenticatedUser] = useState();
-
-    const [selectedUser, setSelectedUser] = useState("");
-
-    const [messageInput, setMessageInput] = useState("")
+    const authUser = JSON.parse(localStorage.getItem("authUser"));
 
     useEffect(() => {
-        async function fetchContacts() {
+        async function fetchChatRooms() {
             try {
-                const response = await axios.get('api/chat/contacts');
+                const response = await axios.get('api/chat/chatrooms');
                 if (response.status === 200) {
-                    setContacts(response.data);
+                    setChatRooms(response.data);
                     if (response.data.length > 0) {
-                        setSelectedUser(response.data[0]);
+                        setSelectedChatRoom(response.data[0]);
                     }
                 }
             } catch (error) {
-                console.error('Error fetching contacts:', error);
+                console.error(error.message);
             }
         }
 
-        fetchContacts();
+        fetchChatRooms();
+
     }, []);
 
     useEffect(() => {
-        const authUser = localStorage.getItem("authUser");
-        setAuthenticatedUser(JSON.parse(authUser));
-    }, []);
-
-    async function createMessage(data) {
-        try {
-            const response = await axios.post('api/chat/send-message', data);
-            if (response.status === 200) {
-                return response.data;
+        async function fetchMessages() {
+            try {
+                const response = await axios.get('api/chat/messages');
+                if (response.status === 200) {
+                    setMessages(response.data);
+                }
+            } catch (error) {
+                console.error(error.message);
             }
         }
-        catch (error) {
-            throw error;
+
+        fetchMessages();
+    }, []);
+
+    useEffect(() => {
+        if (selectedChatRoom && messages.length > 0) {
+            const filteredMessages = messages.filter(
+                (message) =>
+                    (message.from_id === selectedChatRoom.from_id && message.to_id === selectedChatRoom.to_id) ||
+                    (message.from_id === selectedChatRoom.to_id && message.to_id === selectedChatRoom.from_id)
+            );
+
+            setMessageToRender(filteredMessages);
         }
-    }
+    }, [selectedChatRoom, messages]);
 
     const handleAddMessage = async () => {
         const newMessage = {
-            id: crypto.randomUUID(),
-            from_id: authenticatedUser.id,
-            to_id: selectedUser.id,
+            id: Date.now().toString(),
+            from_id: authUser.id,
+            to_id: selectedChatRoom.user.id,
             body: messageInput,
             attachment: null,
             seen: 0,
@@ -73,230 +78,270 @@ const Chat = () => {
             updated_at: null,
         };
 
-        setContacts((prevData) =>
-            prevData.map((user) =>
-                user.id === selectedUser.id
-                    ? {
-                        ...user,
-                        messages: [...user.messages, newMessage],
-                    }
-                    : user
-            )
+
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
+
+        setChatRooms((prevChatRooms) =>
+            prevChatRooms.map((chatroom) => {
+                if (
+                    (chatroom.from_id === newMessage.from_id && chatroom.to_id === newMessage.to_id) ||
+                    (chatroom.from_id === newMessage.to_id && chatroom.to_id === newMessage.from_id)
+                ) {
+                    return {
+                        ...chatroom,
+                        latest_message: newMessage,
+                    };
+                }
+                return chatroom;
+            })
         );
 
         try {
-            const response = await createMessage({
-                from_id: authenticatedUser.id,
-                to_id: selectedUser.id,
-                body: messageInput,
+            const response = await axios.post("api/chat/messages", {
+                from_id: newMessage.from_id,
+                to_id: newMessage.to_id,
+                body: newMessage.body,
             });
 
-            setContacts((prevData) =>
-                prevData.map((user) =>
-                    user.id === selectedUser.id
-                        ? {
-                            ...user,
-                            messages: user.messages.map((message) =>
-                                message.id === newMessage.id
-                                    ? { ...message, id: response.id }
-                                    : message
-                            ),
+            if (response.status === 200) {
+                const serverMessage = response.data;
+
+
+                setMessages((prevMessages) =>
+                    prevMessages.map((msg) =>
+                        msg.id === newMessage.id ? serverMessage : msg
+                    )
+                );
+
+
+                setChatRooms((prevChatRooms) =>
+                    prevChatRooms.map((chatroom) => {
+                        if (
+                            (chatroom.from_id === serverMessage.from_id && chatroom.to_id === serverMessage.to_id) ||
+                            (chatroom.from_id === serverMessage.to_id && chatroom.to_id === serverMessage.from_id)
+                        ) {
+                            return {
+                                ...chatroom,
+                                latest_message: serverMessage,
+                            };
                         }
-                        : user
-                )
-            );
+                        return chatroom;
+                    })
+                );
+            }
         } catch (error) {
-            console.error("Error sending message:", error);
-            setContacts((prevData) =>
-                prevData.map((user) =>
-                    user.id === selectedUser.id
-                        ? {
-                            ...user,
-                            messages: user.messages.filter(
-                                (message) => message.id !== newMessage.id
-                            ),
-                        }
-                        : user
-                )
+            console.error("Failed to send message:", error);
+
+
+            setMessages((prevMessages) =>
+                prevMessages.filter((msg) => msg.id !== newMessage.id)
+            );
+
+
+            setChatRooms((prevChatRooms) =>
+                prevChatRooms.map((chatroom) => {
+                    if (
+                        (chatroom.from_id === newMessage.from_id && chatroom.to_id === newMessage.to_id) ||
+                        (chatroom.from_id === newMessage.to_id && chatroom.to_id === newMessage.from_id)
+                    ) {
+                        return {
+                            ...chatroom,
+                            latest_message: chatroom.latest_message && chatroom.latest_message.id !== newMessage.id
+                                ? chatroom.latest_message
+                                : null,
+                        };
+                    }
+                    return chatroom;
+                })
             );
         }
+
+        setMessageInput("");
     };
 
-    const chatContainerRef = usePerfectScrollbar({
-        wheelSpeed: 1,
-        wheelPropagation: false,
-        minScrollbarLength: 20,
-    });
-
     useEffect(() => {
-        if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-        }
-    }, [contacts, selectedUser]);
+        const channel = echo.private(`chat.${authUser.id}`);
 
+        channel.listen('.receive.message', (event) => {
+            const newMessage = {
+                id: event.message.id,
+                from_id: event.message.from_id,
+                to_id: event.message.to_id,
+                body: event.message.body,
+                attachment: event.message.attachment,
+                seen: event.message.seen,
+                created_at: event.message.created_at,
+                updated_at: event.message.updated_at,
+            };
 
-    useEffect(() => {
-        const authUser = localStorage.getItem("authUser");
+            const messageSound = new Audio('/ringtone/sound.mp3');
+            messageSound.play();
 
-        const user = JSON.parse(authUser);
+            setMessages((prevMessages) =>
+                [...prevMessages, newMessage].sort(
+                    (a, b) => new Date(a.created_at) - new Date(b.created_at)
+                )
+            );
 
-        const channel = echo.private(`chat.${user.id}`);
+            setChatRooms((prevChatRooms) =>
+                prevChatRooms.map((chatroom) => {
+                    if (
+                        (chatroom.from_id === newMessage.from_id && chatroom.to_id === newMessage.to_id) ||
+                        (chatroom.from_id === newMessage.to_id && chatroom.to_id === newMessage.from_id)
+                    ) {
+                        return {
+                            ...chatroom,
+                            latest_message: newMessage,
+                        };
+                    }
+                    return chatroom;
+                })
+            );
 
-        channel.listen('.message.send', (event) => {
-            console.log(event);
         });
 
         return () => {
-            echo.leave(`chat.${user.id}`);
+            echo.leave(`chat.${authUser.id}`);
         };
+    }, [authUser.id]);
+
+
+    useEffect(() => {
+
+        async function fetchContacts() {
+            try {
+                const response = await axios.get('api/chat/contacts');
+                if (response.status === 200) {
+                    setContacts(response.data);
+                }
+            } catch (error) {
+                console.log(error);
+            }
+        }
+
+        fetchContacts();
+
     }, []);
+
+
+    useEffect(() => {
+        const channel = echo.private(`mark.message.seen.${authUser.id}`);
+
+        channel.listen('.message.seen', (event) => {
+            console.log(event);
+            const seenMessageId = event.message.id;
+            setMessages((prevMessages) =>
+                prevMessages.map((msg) =>
+                    msg.id === seenMessageId ? { ...msg, seen: true } : msg
+                )
+            );
+        });
+
+        return () => {
+            echo.leave(`mark.message.seen.${authUser.id}`);
+        };
+    }, [authUser.id]);
+
+
+    const markMessageAsSeen = (messageId) => {
+        axios.post('/api/chat/message/seen', { 'message_id': messageId })
+            .then((response) => {
+                console.log('Message marked as seen');
+            })
+            .catch((error) => {
+                console.error('Error marking message as seen:', error);
+            });
+    };
+
+
+    const renderChatRooms = chatrooms.map((chatroom, index) => (
+        <li onClick={() => setSelectedChatRoom(chatroom)} key={index}
+            className={`chat-contact-list-item mb-1 ${chatroom.user.id === selectedChatRoom.user.id && 'active'}`}>
+            <a className="d-flex align-items-center">
+                <div className="flex-shrink-0 avatar avatar-online">
+                    <img
+                        src="https://bootdey.com/img/Content/avatar/avatar2.png"
+                        alt="Avatar"
+                        className="rounded-circle"
+                    />
+                </div>
+                <div className="chat-contact-info flex-grow-1 ms-4">
+                    <div className="d-flex justify-content-between align-items-center">
+                        <h6 className="chat-contact-name text-truncate m-0 fw-normal">
+                            {chatroom.user.name}
+                        </h6>
+                        <small className="chat-contact-list-item-time">5 Minutes</small>
+                    </div>
+                    <small className="chat-contact-status text-truncate">
+                        {chatroom.latest_message?.body}
+                    </small>
+                </div>
+            </a>
+        </li>
+    ));
+
+    const renderContacts = contacts.map((contact, index) => (
+        <li key={contact.id} className="chat-contact-list-item">
+            <a className="d-flex align-items-center">
+                <div className="flex-shrink-0 avatar">
+                    <img
+                        src="https://bootdey.com/img/Content/avatar/avatar2.png"
+                        alt="Avatar"
+                        className="rounded-circle"
+                    />
+                </div>
+                <div className="chat-contact-info flex-grow-1 ms-4">
+                    <h6 className="chat-contact-name text-truncate m-0 fw-normal">
+                        {contact.name}
+                    </h6>
+                    <small className="chat-contact-status text-truncate">
+                        UI/UX Designer
+                    </small>
+                </div>
+            </a>
+        </li>
+    ));
+
+    // const renderMessages = messageToRender.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).map((message) => (
+    //     <li
+    //         key={message.id}
+    //         className={`chat-message ${message.from_id === authUser.id ? "chat-message-right" : "chat-message-left"}`}
+    //     >
+    //         <div className="d-flex overflow-hidden">
+    //             <div className="chat-message-wrapper flex-grow-1">
+    //                 <div className="chat-message-text">
+    //                     <p className="mb-0">{message.body}</p>
+    //                 </div>
+    //                 <div className="text-end text-muted mt-1">
+    //                     <i
+    //                         className={`bx bx-check-double bx-16px me-1 ${message.seen ? "text-success" : "text-muted"}`}
+    //                     />
+    //                     <small>
+    //                         {new Date(message.created_at).toLocaleTimeString([], {
+    //                             hour: "2-digit",
+    //                             minute: "2-digit",
+    //                         })}
+    //                     </small>
+    //                 </div>
+    //             </div>
+    //             <div className="user-avatar flex-shrink-0 ms-4">
+    //                 <div className="avatar avatar-sm">
+    //                     <img
+    //                         src="https://bootdey.com/img/Content/avatar/avatar2.png"
+    //                         alt="Avatar"
+    //                         className="rounded-circle"
+    //                     />
+    //                 </div>
+    //             </div>
+    //         </div>
+    //     </li>
+    // ));
 
 
     return (
         <Layout>
             <div className="app-chat card overflow-hidden">
                 <div className="row g-0">
-                    <div
-                        className="col app-chat-sidebar-left app-sidebar overflow-hidden"
-                        id="app-chat-sidebar-left"
-                    >
-                        <div className="chat-sidebar-left-user sidebar-header d-flex flex-column justify-content-center align-items-center flex-wrap px-6 pt-12">
-                            <div className="avatar avatar-xl avatar-online chat-sidebar-avatar">
-                                <img
-                                    src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                    alt="Avatar"
-                                    className="rounded-circle"
-                                />
-                            </div>
-                            <h5 className="mt-4 mb-0">John Doe</h5>
-                            <span>Admin</span>
-                            <i
-                                className="bx bx-x bx-lg cursor-pointer close-sidebar"
-                                data-bs-toggle="sidebar"
-                                data-overlay=""
-                                data-target="#app-chat-sidebar-left"
-                            />
-                        </div>
-                        <div className="sidebar-body px-6 pb-6 ps ps--active-y">
-                            <div className="my-6">
-                                <label
-                                    htmlFor="chat-sidebar-left-user-about"
-                                    className="text-uppercase text-muted mb-1"
-                                >
-                                    About
-                                </label>
-                                <textarea
-                                    id="chat-sidebar-left-user-about"
-                                    className="form-control chat-sidebar-left-user-about"
-                                    rows={3}
-                                    maxLength={120}
-                                    defaultValue={
-                                        "Hey there, we’re just writing to let you know that you’ve been subscribed to a repository on GitHub."
-                                    }
-                                />
-                            </div>
-                            <div className="my-6">
-                                <p className="text-uppercase text-muted mb-1">Status</p>
-                                <div className="d-grid gap-2 pt-2 text-heading ms-2">
-                                    <div className="form-check form-check-success">
-                                        <input
-                                            name="chat-user-status"
-                                            className="form-check-input"
-                                            type="radio"
-                                            defaultValue="active"
-                                            id="user-active"
-                                            defaultChecked=""
-                                        />
-                                        <label className="form-check-label" htmlFor="user-active">
-                                            Online
-                                        </label>
-                                    </div>
-                                    <div className="form-check form-check-warning">
-                                        <input
-                                            name="chat-user-status"
-                                            className="form-check-input"
-                                            type="radio"
-                                            defaultValue="away"
-                                            id="user-away"
-                                        />
-                                        <label className="form-check-label" htmlFor="user-away">
-                                            Away
-                                        </label>
-                                    </div>
-                                    <div className="form-check form-check-danger">
-                                        <input
-                                            name="chat-user-status"
-                                            className="form-check-input"
-                                            type="radio"
-                                            defaultValue="busy"
-                                            id="user-busy"
-                                        />
-                                        <label className="form-check-label" htmlFor="user-busy">
-                                            Do not Disturb
-                                        </label>
-                                    </div>
-                                    <div className="form-check form-check-secondary">
-                                        <input
-                                            name="chat-user-status"
-                                            className="form-check-input"
-                                            type="radio"
-                                            defaultValue="offline"
-                                            id="user-offline"
-                                        />
-                                        <label className="form-check-label" htmlFor="user-offline">
-                                            Offline
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="my-6">
-                                <p className="text-uppercase text-muted mb-1">Settings</p>
-                                <ul className="list-unstyled d-grid gap-4 ms-2 pt-2 text-heading">
-                                    <li className="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i className="bx bx-lock-alt me-1" />
-                                            <span className="align-middle">Two-step Verification</span>
-                                        </div>
-                                        <div className="form-check form-switch mb-0 me-1">
-                                            <input
-                                                type="checkbox"
-                                                className="form-check-input"
-                                                defaultChecked=""
-                                            />
-                                        </div>
-                                    </li>
-                                    <li className="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i className="bx bx-bell me-1" />
-                                            <span className="align-middle">Notification</span>
-                                        </div>
-                                        <div className="form-check form-switch mb-0 me-1">
-                                            <input type="checkbox" className="form-check-input" />
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <i className="bx bx-user me-1" />
-                                        <span className="align-middle">Invite Friends</span>
-                                    </li>
-                                    <li>
-                                        <i className="bx bx-trash me-1" />
-                                        <span className="align-middle">Delete Account</span>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div className="d-flex mt-6">
-                                <button
-                                    className="btn btn-primary w-100"
-                                    data-bs-toggle="sidebar"
-                                    data-overlay=""
-                                    data-target="#app-chat-sidebar-left"
-                                >
-                                    <i className="bx bx-log-out bx-sm me-2" />
-                                    Logout
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                     <div
                         className="col app-chat-contacts app-sidebar flex-grow-0 overflow-hidden border-end"
                         id="app-chat-contacts"
@@ -335,272 +380,8 @@ const Chat = () => {
                                 data-target="#app-chat-contacts"
                             />
                         </div>
-                        <div ref={scrollContainerRef} className="sidebar-body ps ps--active-y">
-                            <ul
-                                className="list-unstyled chat-contact-list py-2 mb-0"
-                                id="chat-list"
-                            >
-                                <li className="chat-contact-list-item chat-contact-list-item-title mt-0">
-                                    <h5 className="text-primary mb-0">Chats</h5>
-                                </li>
-                                <li className="chat-contact-list-item chat-list-item-0 d-none">
-                                    <h6 className="text-muted mb-0">No Chats Found</h6>
-                                </li>
-                                {
-                                    contacts.map((user, index) => {
-                                        const latestMessage = user.messages.length > 0
-                                            ? [...user.messages].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
-                                            : null;
-                                        return (
-                                            <li
-                                                onClick={() => setSelectedUser(user)}
-                                                key={index}
-                                                className={`chat-contact-list-item mb-1 ${selectedUser?.id === user.id ? "active" : ""}`}
-                                            >
-                                                <a className="d-flex align-items-center">
-                                                    <div className={`flex-shrink-0 avatar ${user.active_status ? "avatar-online" : "avatar-offline"}`}>
-                                                        <img
-                                                            src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                            alt="Avatar"
-                                                            className="rounded-circle"
-                                                        />
-                                                    </div>
-                                                    <div className="chat-contact-info flex-grow-1 ms-4">
-                                                        <div className="d-flex justify-content-between align-items-center">
-                                                            <h6 className="chat-contact-name text-truncate m-0 fw-normal">
-                                                                {user.name}
-                                                            </h6>
-                                                            <small className="text-muted">
-                                                                {latestMessage ? new Date(latestMessage.created_at).toLocaleTimeString() : "No time"}
-                                                            </small>
-                                                        </div>
-                                                        <small className="chat-contact-status text-truncate">
-                                                            {latestMessage
-                                                                ? latestMessage.body
-                                                                : "No messages"}
-                                                        </small>
-                                                    </div>
-                                                </a>
-                                            </li>
-                                        );
-                                    })
-                                }
-                            </ul>
-                            <ul
-                                className="list-unstyled chat-contact-list mb-0 py-2"
-                                id="contact-list"
-                            >
-                                <li className="chat-contact-list-item chat-contact-list-item-title mt-0">
-                                    <h5 className="text-primary mb-0">Contacts</h5>
-                                </li>
-                                <li className="chat-contact-list-item contact-list-item-0 d-none">
-                                    <h6 className="text-muted mb-0">No Contacts Found</h6>
-                                </li>
-                                <li className="chat-contact-list-item">
-                                    <a className="d-flex align-items-center">
-                                        <div className="flex-shrink-0 avatar">
-                                            <img
-                                                src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                alt="Avatar"
-                                                className="rounded-circle"
-                                            />
-                                        </div>
-                                        <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <h6 className="chat-contact-name text-truncate m-0 fw-normal">
-                                                Natalie Maxwell
-                                            </h6>
-                                            <small className="chat-contact-status text-truncate">
-                                                UI/UX Designer
-                                            </small>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li className="chat-contact-list-item">
-                                    <a className="d-flex align-items-center">
-                                        <div className="flex-shrink-0 avatar">
-                                            <img
-                                                src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                alt="Avatar"
-                                                className="rounded-circle"
-                                            />
-                                        </div>
-                                        <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <h6 className="chat-contact-name text-truncate m-0 fw-normal">
-                                                Jess Cook
-                                            </h6>
-                                            <small className="chat-contact-status text-truncate">
-                                                Business Analyst
-                                            </small>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li className="chat-contact-list-item">
-                                    <a className="d-flex align-items-center">
-                                        <div className="avatar d-block flex-shrink-0">
-                                            <span className="avatar-initial rounded-circle bg-label-primary">
-                                                LM
-                                            </span>
-                                        </div>
-                                        <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <h6 className="chat-contact-name text-truncate m-0 fw-normal">
-                                                Louie Mason
-                                            </h6>
-                                            <small className="chat-contact-status text-truncate">
-                                                Resource Manager
-                                            </small>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li className="chat-contact-list-item">
-                                    <a className="d-flex align-items-center">
-                                        <div className="flex-shrink-0 avatar">
-                                            <img
-                                                src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                alt="Avatar"
-                                                className="rounded-circle"
-                                            />
-                                        </div>
-                                        <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <h6 className="chat-contact-name text-truncate m-0 fw-normal">
-                                                Krystal Norton
-                                            </h6>
-                                            <small className="chat-contact-status text-truncate">
-                                                Business Executive
-                                            </small>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li className="chat-contact-list-item">
-                                    <a className="d-flex align-items-center">
-                                        <div className="flex-shrink-0 avatar">
-                                            <img
-                                                src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                alt="Avatar"
-                                                className="rounded-circle"
-                                            />
-                                        </div>
-                                        <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <h6 className="chat-contact-name text-truncate m-0 fw-normal">
-                                                Stacy Garrison
-                                            </h6>
-                                            <small className="chat-contact-status text-truncate">
-                                                Marketing Ninja
-                                            </small>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li className="chat-contact-list-item">
-                                    <a className="d-flex align-items-center">
-                                        <div className="avatar d-block flex-shrink-0">
-                                            <span className="avatar-initial rounded-circle bg-label-success">
-                                                CM
-                                            </span>
-                                        </div>
-                                        <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <h6 className="chat-contact-name text-truncate m-0 fw-normal">
-                                                Calvin Moore
-                                            </h6>
-                                            <small className="chat-contact-status text-truncate">
-                                                UX Engineer
-                                            </small>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li className="chat-contact-list-item">
-                                    <a className="d-flex align-items-center">
-                                        <div className="flex-shrink-0 avatar">
-                                            <img
-                                                src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                alt="Avatar"
-                                                className="rounded-circle"
-                                            />
-                                        </div>
-                                        <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <h6 className="chat-contact-name text-truncate m-0 fw-normal">
-                                                Mary Giles
-                                            </h6>
-                                            <small className="chat-contact-status text-truncate">
-                                                Account Department
-                                            </small>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li className="chat-contact-list-item">
-                                    <a className="d-flex align-items-center">
-                                        <div className="flex-shrink-0 avatar">
-                                            <img
-                                                src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                alt="Avatar"
-                                                className="rounded-circle"
-                                            />
-                                        </div>
-                                        <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <h6 className="chat-contact-name text-truncate m-0 fw-normal">
-                                                Waldemar Mannering
-                                            </h6>
-                                            <small className="chat-contact-status text-truncate">
-                                                AWS Support
-                                            </small>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li className="chat-contact-list-item">
-                                    <a className="d-flex align-items-center">
-                                        <div className="avatar d-block flex-shrink-0">
-                                            <span className="avatar-initial rounded-circle bg-label-danger">
-                                                AJ
-                                            </span>
-                                        </div>
-                                        <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <h6 className="chat-contact-name text-truncate m-0 fw-normal">
-                                                Amy Johnson
-                                            </h6>
-                                            <small className="chat-contact-status text-truncate">
-                                                Frontend Developer
-                                            </small>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li className="chat-contact-list-item">
-                                    <a className="d-flex align-items-center">
-                                        <div className="flex-shrink-0 avatar">
-                                            <img
-                                                src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                alt="Avatar"
-                                                className="rounded-circle"
-                                            />
-                                        </div>
-                                        <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <h6 className="chat-contact-name text-truncate m-0 fw-normal">
-                                                Felecia Rower
-                                            </h6>
-                                            <small className="chat-contact-status text-truncate">
-                                                Cloud Engineer
-                                            </small>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li className="chat-contact-list-item mb-0">
-                                    <a className="d-flex align-items-center">
-                                        <div className="flex-shrink-0 avatar">
-                                            <img
-                                                src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                alt="Avatar"
-                                                className="rounded-circle"
-                                            />
-                                        </div>
-                                        <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <h6 className="chat-contact-name text-truncate m-0 fw-normal">
-                                                William Stephens
-                                            </h6>
-                                            <small className="chat-contact-status text-truncate">
-                                                Backend Developer
-                                            </small>
-                                        </div>
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
+                        <ChatContacts chatrooms={renderChatRooms} contacts={renderContacts} />
+
                     </div>
                     <div className="col app-chat-history">
                         <div className="chat-history-wrapper">
@@ -624,7 +405,7 @@ const Chat = () => {
                                             />
                                         </div>
                                         <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <h6 className="m-0 fw-normal">{selectedUser.name}</h6>
+                                            <h6 className="m-0 fw-normal">{selectedChatRoom.user?.name}</h6>
                                             <small className="user-status text-body">
                                                 NextJS developer
                                             </small>
@@ -668,55 +449,21 @@ const Chat = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div ref={chatContainerRef} className="chat-history-body ps ps--active-y">
-                                <ul className="list-unstyled chat-history">
-                                    {
-                                        contacts && Array.isArray(contacts) && contacts.length > 0 && (
-                                            contacts.filter(contact => contact.id === selectedUser.id).map((contact) => (
-                                                contact.messages && Array.isArray(contact.messages) && contact.messages.length > 0 && (
-                                                    contact.messages
-                                                        .sort((a, b) => a.created_at > b.created_at ? 1 : -1)
-                                                        .map((message, index) => (
-                                                            <li key={message.id} className={`chat-message ${message.from_id === authenticatedUser.id ? "chat-message-right" : ""}`}>
-                                                                <div className="d-flex overflow-hidden">
-                                                                    <div className="chat-message-wrapper flex-grow-1">
-                                                                        <div className="chat-message-text">
-                                                                            <p className="mb-0">
-                                                                                {message.body}
-                                                                            </p>
-                                                                        </div>
-                                                                        <div className="text-end text-muted mt-1">
-                                                                            <i className={`bx bx-check-double bx-16px me-1 ${message.seen && "text-success"} `} />
-                                                                            <small>10:00 AM</small>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="user-avatar flex-shrink-0 ms-4">
-                                                                        <div className="avatar avatar-sm">
-                                                                            <img
-                                                                                src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                                                                                alt="Avatar"
-                                                                                className="rounded-circle"
-                                                                            />
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </li>
-                                                        ))
-                                                )
-                                            ))
-                                        )
-                                    }
-                                </ul>
-                            </div>
+                            <ChatMessages
+                                authUser={authUser}
+                                user={selectedChatRoom}
+                                messages={messageToRender}
+                                markMessageAsSeen={markMessageAsSeen}>
+                            </ChatMessages>
+
                             <div className="chat-history-footer shadow-xs">
                                 <div className="input-group">
                                     <input onChange={(e) => setMessageInput(e.target.value)} value={messageInput} type="text" className="form-control" placeholder="Message" aria-label="Message" aria-describedby="button-addon2" />
-                                    <button onClick={() => { handleAddMessage(), setMessageInput(""); }} className="btn btn-outline-primary" type="button" id="button-addon2">Send</button>
+                                    <button onClick={handleAddMessage} className="btn btn-outline-primary" type="button" id="button-addon2">Send</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-
                     <div className="app-overlay" />
                 </div>
             </div>

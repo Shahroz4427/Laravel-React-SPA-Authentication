@@ -23,8 +23,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('photos', PhotoController::class);
     Route::apiResource('todos', TodoController::class);
     Route::apiResource('customers', CustomerController::class);
+    Route::get('chat/chatrooms', [ChatController::class, 'chatrooms']);
+    Route::get('chat/messages', [ChatController::class, 'messages']);
+    Route::post('chat/messages', [ChatController::class, 'sendMessage']);
     Route::get('chat/contacts', [ChatController::class, 'contacts']);
-    Route::post('chat/send-message',[ChatController::class,'sendMessage']);
+    Route::post('chat/message/seen', [ChatController::class, 'markAsSeen']);
 });
 
 

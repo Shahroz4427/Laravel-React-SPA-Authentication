@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
+            // if not exist, add the new column
             if (!Schema::hasColumn('users', 'dark_mode')) {
                 $table->boolean('dark_mode')->default(0);
             }

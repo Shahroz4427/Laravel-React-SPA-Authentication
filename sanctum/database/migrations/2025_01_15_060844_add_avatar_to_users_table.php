@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('chat_message_favourites', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->bigInteger('user_id');
-            $table->bigInteger('favorite_id');
-            $table->timestamps();
+        Schema::table('users', function (Blueprint $table) {
+            // if not exist, add the new column
+            if (!Schema::hasColumn('users', 'avatar')) {
+                $table->string('avatar')->default('profile');
+            }
         });
     }
 
@@ -24,6 +24,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('chat_message_favourites');
+        Schema::table('users', function (Blueprint $table) {
+            //
+        });
     }
 };
