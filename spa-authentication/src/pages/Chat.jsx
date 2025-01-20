@@ -11,13 +11,13 @@ import './../chat.css'
 const Chat = () => {
 
     useDocumentTitle('Chat');
-
     const [chatrooms, setChatRooms] = useState([]);
     const [messages, setMessages] = useState([]);
     const [messageToRender, setMessageToRender] = useState([]);
     const [selectedChatRoom, setSelectedChatRoom] = useState({});
     const [messageInput, setMessageInput] = useState("");
     const [contacts, setContacts] = useState([]);
+    const [selectedContact, setSelectedContact] = useState(null);
     const authUser = JSON.parse(localStorage.getItem("authUser"));
 
     useEffect(() => {
@@ -67,76 +67,21 @@ const Chat = () => {
     }, [selectedChatRoom, messages]);
 
     const handleAddMessage = async () => {
-        const newMessage = {
-            id: Date.now().toString(),
-            from_id: authUser.id,
-            to_id: selectedChatRoom.user.id,
-            body: messageInput,
-            attachment: null,
-            seen: 0,
-            created_at: new Date().toISOString(),
-            updated_at: null,
-        };
+        if (selectedContact === null) {
+            setMessageInput("");
+            const newMessage = {
+                id: Date.now().toString(),
+                from_id: authUser.id,
+                to_id: selectedChatRoom.user.id,
+                body: messageInput,
+                attachment: null,
+                seen: 0,
+                created_at: new Date().toISOString(),
+                updated_at: null,
+            };
 
 
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
-
-        setChatRooms((prevChatRooms) =>
-            prevChatRooms.map((chatroom) => {
-                if (
-                    (chatroom.from_id === newMessage.from_id && chatroom.to_id === newMessage.to_id) ||
-                    (chatroom.from_id === newMessage.to_id && chatroom.to_id === newMessage.from_id)
-                ) {
-                    return {
-                        ...chatroom,
-                        latest_message: newMessage,
-                    };
-                }
-                return chatroom;
-            })
-        );
-
-        try {
-            const response = await axios.post("api/chat/messages", {
-                from_id: newMessage.from_id,
-                to_id: newMessage.to_id,
-                body: newMessage.body,
-            });
-
-            if (response.status === 200) {
-                const serverMessage = response.data;
-
-
-                setMessages((prevMessages) =>
-                    prevMessages.map((msg) =>
-                        msg.id === newMessage.id ? serverMessage : msg
-                    )
-                );
-
-
-                setChatRooms((prevChatRooms) =>
-                    prevChatRooms.map((chatroom) => {
-                        if (
-                            (chatroom.from_id === serverMessage.from_id && chatroom.to_id === serverMessage.to_id) ||
-                            (chatroom.from_id === serverMessage.to_id && chatroom.to_id === serverMessage.from_id)
-                        ) {
-                            return {
-                                ...chatroom,
-                                latest_message: serverMessage,
-                            };
-                        }
-                        return chatroom;
-                    })
-                );
-            }
-        } catch (error) {
-            console.error("Failed to send message:", error);
-
-
-            setMessages((prevMessages) =>
-                prevMessages.filter((msg) => msg.id !== newMessage.id)
-            );
-
+            setMessages((prevMessages) => [...prevMessages, newMessage]);
 
             setChatRooms((prevChatRooms) =>
                 prevChatRooms.map((chatroom) => {
@@ -146,17 +91,92 @@ const Chat = () => {
                     ) {
                         return {
                             ...chatroom,
-                            latest_message: chatroom.latest_message && chatroom.latest_message.id !== newMessage.id
-                                ? chatroom.latest_message
-                                : null,
+                            latest_message: newMessage,
                         };
                     }
                     return chatroom;
                 })
             );
-        }
 
-        setMessageInput("");
+            try {
+                const response = await axios.post("api/chat/messages", {
+                    from_id: newMessage.from_id,
+                    to_id: newMessage.to_id,
+                    body: newMessage.body,
+                });
+
+                if (response.status === 200) {
+                    const serverMessage = response.data;
+
+
+                    setMessages((prevMessages) =>
+                        prevMessages.map((msg) =>
+                            msg.id === newMessage.id ? serverMessage : msg
+                        )
+                    );
+
+
+                    setChatRooms((prevChatRooms) =>
+                        prevChatRooms.map((chatroom) => {
+                            if (
+                                (chatroom.from_id === serverMessage.from_id && chatroom.to_id === serverMessage.to_id) ||
+                                (chatroom.from_id === serverMessage.to_id && chatroom.to_id === serverMessage.from_id)
+                            ) {
+                                return {
+                                    ...chatroom,
+                                    latest_message: serverMessage,
+                                };
+                            }
+                            return chatroom;
+                        })
+                    );
+                }
+            } catch (error) {
+                console.error("Failed to send message:", error);
+
+
+                setMessages((prevMessages) =>
+                    prevMessages.filter((msg) => msg.id !== newMessage.id)
+                );
+
+
+                setChatRooms((prevChatRooms) =>
+                    prevChatRooms.map((chatroom) => {
+                        if (
+                            (chatroom.from_id === newMessage.from_id && chatroom.to_id === newMessage.to_id) ||
+                            (chatroom.from_id === newMessage.to_id && chatroom.to_id === newMessage.from_id)
+                        ) {
+                            return {
+                                ...chatroom,
+                                latest_message: chatroom.latest_message && chatroom.latest_message.id !== newMessage.id
+                                    ? chatroom.latest_message
+                                    : null,
+                            };
+                        }
+                        return chatroom;
+                    })
+                );
+            }
+
+        }
+        else {
+            setMessageInput("");
+            try {
+                const response = await axios.post('api/chat/create/chatroom', {
+                    from_id: authUser.id,
+                    to_id: selectedContact.id,
+                    body: messageInput
+                });
+                if (response.status === 200) {
+                    setSelectedChatRoom(response.data)
+                    setChatRooms([...chatrooms, response.data]);
+                    setSelectedContact(null);
+                    setMessages([...messages, response.data.latest_message])
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
     };
 
     useEffect(() => {
@@ -173,9 +193,6 @@ const Chat = () => {
                 created_at: event.message.created_at,
                 updated_at: event.message.updated_at,
             };
-
-            const messageSound = new Audio('/ringtone/sound.mp3');
-            messageSound.play();
 
             setMessages((prevMessages) =>
                 [...prevMessages, newMessage].sort(
@@ -205,9 +222,7 @@ const Chat = () => {
         };
     }, [authUser.id]);
 
-
     useEffect(() => {
-
         async function fetchContacts() {
             try {
                 const response = await axios.get('api/chat/contacts');
@@ -220,15 +235,11 @@ const Chat = () => {
         }
 
         fetchContacts();
-
     }, []);
-
 
     useEffect(() => {
         const channel = echo.private(`mark.message.seen.${authUser.id}`);
-
         channel.listen('.message.seen', (event) => {
-            console.log(event);
             const seenMessageId = event.message.id;
             setMessages((prevMessages) =>
                 prevMessages.map((msg) =>
@@ -243,99 +254,28 @@ const Chat = () => {
     }, [authUser.id]);
 
 
-    const markMessageAsSeen = (messageId) => {
-        axios.post('/api/chat/message/seen', { 'message_id': messageId })
-            .then((response) => {
-                console.log('Message marked as seen');
-            })
-            .catch((error) => {
-                console.error('Error marking message as seen:', error);
-            });
-    };
+    useEffect(() => {
+        const channel = echo.private(`create.new.room.${authUser.id}`);
+        channel.listen('.new.chatroom', (event) => {
+            console.log(event);
+            setChatRooms([...chatrooms, event.chatRoom]);
+            setMessages([...messages, event.chatRoom.latest_message]);
+        });
+
+        return () => {
+            echo.leave(`create.new.room.${authUser.id}`);
+        };
+    }, [authUser.id]);
 
 
-    const renderChatRooms = chatrooms.map((chatroom, index) => (
-        <li onClick={() => setSelectedChatRoom(chatroom)} key={index}
-            className={`chat-contact-list-item mb-1 ${chatroom.user.id === selectedChatRoom.user.id && 'active'}`}>
-            <a className="d-flex align-items-center">
-                <div className="flex-shrink-0 avatar avatar-online">
-                    <img
-                        src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                        alt="Avatar"
-                        className="rounded-circle"
-                    />
-                </div>
-                <div className="chat-contact-info flex-grow-1 ms-4">
-                    <div className="d-flex justify-content-between align-items-center">
-                        <h6 className="chat-contact-name text-truncate m-0 fw-normal">
-                            {chatroom.user.name}
-                        </h6>
-                        <small className="chat-contact-list-item-time">5 Minutes</small>
-                    </div>
-                    <small className="chat-contact-status text-truncate">
-                        {chatroom.latest_message?.body}
-                    </small>
-                </div>
-            </a>
-        </li>
-    ));
-
-    const renderContacts = contacts.map((contact, index) => (
-        <li key={contact.id} className="chat-contact-list-item">
-            <a className="d-flex align-items-center">
-                <div className="flex-shrink-0 avatar">
-                    <img
-                        src="https://bootdey.com/img/Content/avatar/avatar2.png"
-                        alt="Avatar"
-                        className="rounded-circle"
-                    />
-                </div>
-                <div className="chat-contact-info flex-grow-1 ms-4">
-                    <h6 className="chat-contact-name text-truncate m-0 fw-normal">
-                        {contact.name}
-                    </h6>
-                    <small className="chat-contact-status text-truncate">
-                        UI/UX Designer
-                    </small>
-                </div>
-            </a>
-        </li>
-    ));
-
-    // const renderMessages = messageToRender.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).map((message) => (
-    //     <li
-    //         key={message.id}
-    //         className={`chat-message ${message.from_id === authUser.id ? "chat-message-right" : "chat-message-left"}`}
-    //     >
-    //         <div className="d-flex overflow-hidden">
-    //             <div className="chat-message-wrapper flex-grow-1">
-    //                 <div className="chat-message-text">
-    //                     <p className="mb-0">{message.body}</p>
-    //                 </div>
-    //                 <div className="text-end text-muted mt-1">
-    //                     <i
-    //                         className={`bx bx-check-double bx-16px me-1 ${message.seen ? "text-success" : "text-muted"}`}
-    //                     />
-    //                     <small>
-    //                         {new Date(message.created_at).toLocaleTimeString([], {
-    //                             hour: "2-digit",
-    //                             minute: "2-digit",
-    //                         })}
-    //                     </small>
-    //                 </div>
-    //             </div>
-    //             <div className="user-avatar flex-shrink-0 ms-4">
-    //                 <div className="avatar avatar-sm">
-    //                     <img
-    //                         src="https://bootdey.com/img/Content/avatar/avatar2.png"
-    //                         alt="Avatar"
-    //                         className="rounded-circle"
-    //                     />
-    //                 </div>
-    //             </div>
-    //         </div>
-    //     </li>
-    // ));
+    const renderContactName = () => {
+        if (selectedContact != null) {
+            return selectedContact.name
+        }
+        else {
+            return selectedChatRoom.user?.name;
+        }
+    }
 
 
     return (
@@ -380,7 +320,14 @@ const Chat = () => {
                                 data-target="#app-chat-contacts"
                             />
                         </div>
-                        <ChatContacts chatrooms={renderChatRooms} contacts={renderContacts} />
+                        <ChatContacts
+                            chatrooms={chatrooms}
+                            contacts={contacts}
+                            selectChatRoom={(chatroom) => { setSelectedChatRoom(chatroom); setSelectedContact(null) }}
+                            selectedChatRoom={selectedChatRoom}
+                            selectedContact={selectedContact}
+                            selectContact={(contact) => { setSelectedContact(contact) }}
+                        />
 
                     </div>
                     <div className="col app-chat-history">
@@ -405,7 +352,7 @@ const Chat = () => {
                                             />
                                         </div>
                                         <div className="chat-contact-info flex-grow-1 ms-4">
-                                            <h6 className="m-0 fw-normal">{selectedChatRoom.user?.name}</h6>
+                                            <h6 className="m-0 fw-normal">{renderContactName()}</h6>
                                             <small className="user-status text-body">
                                                 NextJS developer
                                             </small>
@@ -453,7 +400,8 @@ const Chat = () => {
                                 authUser={authUser}
                                 user={selectedChatRoom}
                                 messages={messageToRender}
-                                markMessageAsSeen={markMessageAsSeen}>
+                                selectedContact={selectedContact}
+                            >
                             </ChatMessages>
 
                             <div className="chat-history-footer shadow-xs">

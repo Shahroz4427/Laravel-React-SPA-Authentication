@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 /**
  * @method static where(string $string, int|string|null $id)
+ * @method static create(array $array)
  */
 class ChatRoom extends Model
 {

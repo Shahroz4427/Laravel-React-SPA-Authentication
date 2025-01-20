@@ -10,3 +10,8 @@ Broadcast::channel('chat.{id}', function ($user, $id) {
 Broadcast::channel('mark.message.seen.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
+
+
+Broadcast::channel('create.new.room.{id}', function ($user, $id) {
+    return (int) $user->id === (int) $id;
+});

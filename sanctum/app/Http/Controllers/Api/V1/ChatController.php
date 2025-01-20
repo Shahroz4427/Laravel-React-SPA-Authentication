@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 
 use App\Events\MessageSeen;
+use App\Events\NewChatRoom;
 use App\Events\SendMessage;
 use App\Models\ChatRoom;
 use App\Models\ChatMessage;
@@ -12,7 +13,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Psy\Readline\Hoa\Event;
 
 
 class ChatController extends Controller
@@ -29,7 +29,7 @@ class ChatController extends Controller
     {
         $authUserId = Auth::id();
 
-        $contacts = ChatRoom::where('from_id', $authUserId)
+        $chatrooms = ChatRoom::where('from_id', $authUserId)
             ->orWhere('to_id', $authUserId)
             ->with(['fromUser', 'toUser'])
             ->get()
@@ -52,7 +52,7 @@ class ChatController extends Controller
             ->unique('user.id')
             ->values();
 
-        return response()->json($contacts);
+        return response()->json($chatrooms);
     }
 
 
@@ -76,7 +76,7 @@ class ChatController extends Controller
         return response()->json($chatMessage);
     }
 
-    public function markAsSeen(Request $request)
+    public function markAsSeen(Request $request): JsonResponse
     {
         $messageId = $request->get('message_id');
 
@@ -88,5 +88,46 @@ class ChatController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Message marked as seen.']);
     }
+
+    public function createChat(Request $request): JsonResponse
+    {
+        $chatroom = ChatRoom::create([
+            'from_id' => $request->get('from_id'),
+            'to_id' => $request->get('to_id'),
+        ]);
+
+        $newMessage = ChatMessage::create([
+            'from_id' => $request->get('from_id'),
+            'to_id' => $request->get('to_id'),
+            'body' => $request->get('body'),
+            'attachment' => $request->get('attachment'),
+        ]);
+
+
+        $fromUser = User::find($request->get('from_id'));
+
+        $toUser = User::find($request->get('to_id'));
+
+        $data = [
+            'from_id' => $chatroom->from_id,
+            'to_id' => $chatroom->to_id,
+            'user' => $fromUser,
+            'latest_message' => $newMessage,
+        ];
+
+
+        $response = [
+            'from_id' => $chatroom->from_id,
+            'to_id' => $chatroom->to_id,
+            'user' => $toUser,
+            'latest_message' => $newMessage,
+        ];
+
+
+        NewChatRoom::dispatch($data);
+
+        return response()->json($response);
+    }
+
 
 }

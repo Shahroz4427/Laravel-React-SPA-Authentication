@@ -1,7 +1,21 @@
 import { usePerfectScrollbar } from '../../hooks/usePerfectScroller';
 import { useEffect, useRef, useState } from 'react';
+import { axios } from '../../lib/axios';
 
-const ChatMessages = ({ messages, user, markMessageAsSeen, authUser }) => {
+const ChatMessages = ({ messages, user, authUser, selectedContact }) => {
+
+
+    const markMessageAsSeen = (messageId) => {
+        axios.post('/api/chat/message/seen', { 'message_id': messageId })
+            .then((response) => {
+                return response;
+            })
+            .catch((error) => {
+                throw error;
+            });
+    };
+
+
     const chatContainerRef = usePerfectScrollbar({
         wheelSpeed: 1,
         wheelPropagation: false,
@@ -10,6 +24,7 @@ const ChatMessages = ({ messages, user, markMessageAsSeen, authUser }) => {
 
     const observer = useRef();
     const [manualScroll, setManualScroll] = useState(false);
+    const seenMessages = useRef(new Set());
 
     useEffect(() => {
         if (!manualScroll && chatContainerRef.current) {
@@ -33,7 +48,12 @@ const ChatMessages = ({ messages, user, markMessageAsSeen, authUser }) => {
                         const messageId = entry.target.dataset.messageId;
                         const messageToId = entry.target.dataset.toId;
                         const messageSeen = entry.target.dataset.seen === 'true';
-                        if (messageToId === String(authUser.id) && !messageSeen) {
+                        if (
+                            messageToId === String(authUser.id) &&
+                            !messageSeen &&
+                            !seenMessages.current.has(messageId)
+                        ) {
+                            seenMessages.current.add(messageId);
                             markMessageAsSeen(messageId);
                         }
                     }
@@ -57,7 +77,7 @@ const ChatMessages = ({ messages, user, markMessageAsSeen, authUser }) => {
             onScroll={handleScroll}
         >
             <ul className="list-unstyled chat-history">
-                {messages
+                {selectedContact === null ? messages
                     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
                     .map((message) => (
                         <li
@@ -98,7 +118,10 @@ const ChatMessages = ({ messages, user, markMessageAsSeen, authUser }) => {
                                 </div>
                             </div>
                         </li>
-                    ))}
+                    ))
+                    :
+                    <h1>Say Hello</h1>
+                }
             </ul>
         </div>
     );

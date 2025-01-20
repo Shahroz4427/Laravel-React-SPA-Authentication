@@ -28,6 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('chat/messages', [ChatController::class, 'sendMessage']);
     Route::get('chat/contacts', [ChatController::class, 'contacts']);
     Route::post('chat/message/seen', [ChatController::class, 'markAsSeen']);
+    Route::post('chat/create/chatroom', [ChatController::class, 'createChat']);
 });
 
 
