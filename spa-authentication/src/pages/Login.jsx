@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, Link } from 'react-router-dom';
 import useDocumentTitle from '../hooks/useDocumentTitle.jsx';
 import * as z from 'zod';
+import InputPassword from '../components/InputPassword.jsx';
 
 const Login = () => {
 
@@ -17,15 +18,18 @@ const Login = () => {
         email: z.string().email({ message: "Invalid email address" }).min(1, { message: "Email is required" }),
         password: z.string().min(8, { message: "Password must be at least 8 characters long" }),
         password_confirmation: z.string().min(8, { message: "Password confirmation is required" }),
-    }).refine((data) => data.password === data.password_confirmation, {
+    }).refine((data) => {
+        return data.password === data.password_confirmation || !data.password || !data.password_confirmation;
+    }, {
         message: "Passwords do not match",
         path: ["password_confirmation"],
     });
-
+    
     const { register, clearErrors, reset, setError, handleSubmit, formState: { errors } } = useForm({
         mode: 'all',
         resolver: zodResolver(schema),
     });
+    
 
 
     async function setAuthUser() {
@@ -87,31 +91,29 @@ const Login = () => {
                                         id="email"
                                         placeholder="Enter your email"
                                     />
-                                    {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
+                                    {errors.email && <span style={{fontSize:'13px'}} className="text-danger">{errors.email.message}</span>}
                                 </div>
                                 <div className="mb-3 form-password-toggle">
                                     <label htmlFor="password" className="form-label">Password</label>
-                                    <input
-                                        name='password'
-                                        {...register("password")}
-                                        type="password"
-                                        className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+                                    <InputPassword
                                         id="password"
+                                        name="password"
+                                        register={register}
                                         placeholder="Password"
+                                        error={errors.password}
                                     />
-                                    {errors.password && <div className="invalid-feedback">{errors.password.message}</div>}
+                                    {errors.password && <span style={{fontSize:'13px'}} className="text-danger">{errors.password.message}</span>}
                                 </div>
                                 <div className="mb-3 form-password-toggle">
                                     <label htmlFor="password_confirmation" className="form-label">Password Confirmation</label>
-                                    <input
-                                        name='password_confirmation'
-                                        {...register("password_confirmation")}
-                                        type="password"
-                                        className={`form-control ${errors.password_confirmation ? 'is-invalid' : ''}`}
+                                    <InputPassword
                                         id="password_confirmation"
+                                        name="password_confirmation"
+                                        register={register}
                                         placeholder="Password Confirmation"
+                                        error={errors.password_confirmation}
                                     />
-                                    {errors.password_confirmation && <div className="invalid-feedback">{errors.password_confirmation.message}</div>}
+                                    {errors.password_confirmation && <span style={{fontSize:'13px'}}  className='text-danger'>{errors.password_confirmation.message}</span>}
                                 </div>
                                 <div className="mb-3">
                                     <Link to="/register">Create an acount</Link>

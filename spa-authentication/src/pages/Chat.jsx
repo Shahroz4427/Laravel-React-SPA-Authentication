@@ -3,12 +3,12 @@ import useDocumentTitle from '../hooks/useDocumentTitle.jsx';
 import ChatContacts from '../widgets/chat/ChatContacts.jsx';
 import ChatMessages from '../widgets/chat/ChatMessages.jsx';
 import { useEffect, useState } from 'react';
-import { axios } from '../lib/axios.js';
-import echo from '../lib/websocket.js'
-import Layout from '../layout/Layout'
-import './../chat.css'
-import useSound from 'use-sound';
 import ringtone from '/ringtone/sound.mp3';
+import { axios } from '../lib/axios.js';
+import echo from '../lib/websocket.js';
+import Layout from '../layout/Layout';
+import useSound from 'use-sound';
+import './../chat.css'
 
 const Chat = () => {
 
@@ -196,7 +196,6 @@ const Chat = () => {
                 });
 
                 if (response.status === 200) {
-                    play();
                     setChatRooms((prevChatrooms) =>
                         prevChatrooms.map((chatroom) =>
                             chatroom.latest_message.id === optimisticChatRoom.latest_message.id
