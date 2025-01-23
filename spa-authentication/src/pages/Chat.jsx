@@ -7,6 +7,8 @@ import { axios } from '../lib/axios.js';
 import echo from '../lib/websocket.js'
 import Layout from '../layout/Layout'
 import './../chat.css'
+import useSound from 'use-sound';
+import ringtone from '/ringtone/sound.mp3';
 
 const Chat = () => {
 
@@ -18,6 +20,7 @@ const Chat = () => {
     const [messageInput, setMessageInput] = useState("");
     const [contacts, setContacts] = useState([]);
     const [selectedContact, setSelectedContact] = useState(null);
+    const [play] = useSound(ringtone);
     const authUser = JSON.parse(localStorage.getItem("authUser"));
 
     useEffect(() => {
@@ -161,28 +164,74 @@ const Chat = () => {
         }
         else {
             setMessageInput("");
+
+            const optimisticChatRoom = {
+                from_id: authUser.id,
+                to_id: selectedContact.id,
+                user: selectedContact,
+                latest_message: {
+                    id: Date.now().toString(),
+                    from_id: authUser.id,
+                    to_id: selectedContact.id,
+                    body: messageInput,
+                    attachment: null,
+                    seen: 0,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                },
+            };
+
+        
+            setChatRooms([...chatrooms, optimisticChatRoom]);
+            setMessages([...messages, optimisticChatRoom.latest_message]);
+            setContacts((prevContacts) =>
+                prevContacts.filter((c) => c.id !== selectedContact.id)
+            );
+
             try {
                 const response = await axios.post('api/chat/create/chatroom', {
                     from_id: authUser.id,
                     to_id: selectedContact.id,
-                    body: messageInput
+                    body: messageInput,
                 });
+
                 if (response.status === 200) {
-                    setSelectedChatRoom(response.data)
-                    setChatRooms([...chatrooms, response.data]);
-                    setSelectedContact(null);
-                    setMessages([...messages, response.data.latest_message])
+                    play();
+                    setChatRooms((prevChatrooms) =>
+                        prevChatrooms.map((chatroom) =>
+                            chatroom.latest_message.id === optimisticChatRoom.latest_message.id
+                                ? response.data
+                                : chatroom
+                        )
+                    );
+                    setMessages((prevMessages) =>
+                        prevMessages.map((msg) =>
+                            msg.id === optimisticChatRoom.latest_message.id
+                                ? response.data.latest_message
+                                : msg
+                        )
+                    );
+                    setSelectedChatRoom(response.data);
                 }
             } catch (error) {
-                console.error(error);
+                setChatRooms((prevChatrooms) =>
+                    prevChatrooms.filter((chatroom) => chatroom !== optimisticChatRoom)
+                );
+                setMessages((prevMessages) =>
+                    prevMessages.filter((msg) => msg !== optimisticChatRoom.latest_message)
+                );
+            } finally {
+                setSelectedContact(null);
             }
         }
+
     };
 
     useEffect(() => {
         const channel = echo.private(`chat.${authUser.id}`);
 
         channel.listen('.receive.message', (event) => {
+            play();
             const newMessage = {
                 id: event.message.id,
                 from_id: event.message.from_id,
@@ -257,9 +306,13 @@ const Chat = () => {
     useEffect(() => {
         const channel = echo.private(`create.new.room.${authUser.id}`);
         channel.listen('.new.chatroom', (event) => {
-            console.log(event);
+            play();
             setChatRooms([...chatrooms, event.chatRoom]);
             setMessages([...messages, event.chatRoom.latest_message]);
+            setContacts((prevContacts) =>
+                prevContacts.filter((c) => c.id !== event.chatRoom.user.id)
+            );
+
         });
 
         return () => {

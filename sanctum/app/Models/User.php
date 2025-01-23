@@ -14,6 +14,8 @@ use JetBrains\PhpStorm\ArrayShape;
  * @method static whereIn(string $string, \Closure $param)
  * @method static findOrFail(int|string|null $id)
  * @method static where(string $string, string $string1, $id)
+ * @method static whereNotIn(string $string, $excludedUserIds)
+ * @method static find(mixed $get)
  * @property mixed $id
  */
 class User extends Authenticatable

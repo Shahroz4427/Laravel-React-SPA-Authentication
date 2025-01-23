@@ -18,12 +18,24 @@ use App\Models\User;
 class ChatController extends Controller
 {
 
-
     public function contacts(): JsonResponse
     {
-        $users = User::where('id', '!=', auth()->id())->get();
+        $chatroomUserIds = Chatroom::where('from_id', auth()->id())
+            ->orWhere('to_id', auth()->id())
+            ->get(['from_id', 'to_id'])
+            ->flatMap(function ($chatroom) {
+                return [$chatroom->from_id, $chatroom->to_id];
+            })
+            ->unique();
+
+        $excludedUserIds = $chatroomUserIds->merge([auth()->id()]);
+
+        $users = User::whereNotIn('id', $excludedUserIds)->get();
+
         return response()->json($users);
     }
+
+
 
     public function chatrooms(): JsonResponse
     {

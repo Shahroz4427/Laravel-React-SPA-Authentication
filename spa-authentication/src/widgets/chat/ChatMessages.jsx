@@ -120,7 +120,15 @@ const ChatMessages = ({ messages, user, authUser, selectedContact }) => {
                         </li>
                     ))
                     :
-                    <h1>Say Hello</h1>
+                    (<div
+                        className="col app-chat-conversation d-flex align-items-center justify-content-center flex-column"
+                        id="app-chat-conversation"
+                    >
+                        <div className="bg-label-primary p-8 rounded-circle">
+                            <i className="icon-base bx bx-message-alt-detail icon-48px" />
+                        </div>
+                        <p className="my-4">Say Hello!</p>
+                    </div>)
                 }
             </ul>
         </div>
