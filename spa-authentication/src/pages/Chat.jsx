@@ -23,8 +23,18 @@ const Chat = () => {
     const [play] = useSound(ringtone);
     const authUser = JSON.parse(localStorage.getItem("authUser"));
 
+
     useEffect(() => {
         async function fetchChatRooms() {
+            const cachedChatRooms = localStorage.getItem('chatRooms');
+            if (cachedChatRooms) {
+                const parsedChatRooms = JSON.parse(cachedChatRooms);
+                setChatRooms(parsedChatRooms);
+                if (!selectedChatRoom && parsedChatRooms.length > 0) {
+                    setSelectedChatRoom(parsedChatRooms[0]);
+                }
+            }
+
             try {
                 const response = await axios.get('api/chat/chatrooms');
                 if (response.status === 200) {
@@ -32,25 +42,31 @@ const Chat = () => {
                     if (response.data.length > 0) {
                         setSelectedChatRoom(response.data[0]);
                     }
+                    localStorage.setItem('chatRooms', JSON.stringify(response.data));
                 }
             } catch (error) {
-                console.error(error.message);
+                console.error('Error fetching chat rooms:', error.message);
             }
         }
 
         fetchChatRooms();
-
     }, []);
 
     useEffect(() => {
         async function fetchMessages() {
+            const cachedMessages = localStorage.getItem('messages');
+            if (cachedMessages) {
+                setMessages(JSON.parse(cachedMessages));
+            }
+
             try {
                 const response = await axios.get('api/chat/messages');
                 if (response.status === 200) {
                     setMessages(response.data);
+                    localStorage.setItem('messages', JSON.stringify(response.data));
                 }
             } catch (error) {
-                console.error(error.message);
+                console.error('Error fetching messages:', error.message);
             }
         }
 
@@ -272,13 +288,19 @@ const Chat = () => {
 
     useEffect(() => {
         async function fetchContacts() {
+            const cachedContacts = localStorage.getItem('contacts');
+            if (cachedContacts) {
+                setContacts(JSON.parse(cachedContacts));
+            }
+
             try {
                 const response = await axios.get('api/chat/contacts');
                 if (response.status === 200) {
                     setContacts(response.data);
+                    localStorage.setItem('contacts', JSON.stringify(response.data));
                 }
             } catch (error) {
-                console.log(error);
+                console.error('Error fetching contacts:', error);
             }
         }
 

@@ -20,6 +20,12 @@ const SideNav = () => {
         }
     }
 
+
+    const updateInertiaRootClass = () => {
+        const dynamicClass = 'layout-menu-expanded';
+        document.documentElement.classList.remove(dynamicClass);
+    }
+
     return (
         <aside id="layout-menu" className="layout-menu menu-vertical menu bg-menu-theme">
             <div className="app-brand demo">
@@ -91,7 +97,7 @@ const SideNav = () => {
                     href="#"
                     className="layout-menu-toggle menu-link text-large ms-auto d-xl-none"
                 >
-                    <i className="bx bx-chevron-left bx-sm align-middle" />
+                    <i onClick={updateInertiaRootClass} className="bx bx-chevron-left bx-sm align-middle" />
                 </a>
             </div>
             <div className="menu-inner-shadow"></div>

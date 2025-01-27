@@ -1,9 +1,14 @@
+import { Link } from 'react-router-dom';
 import Notification from '../components/Notification'
 
 const NavBar = () => {
 
     const authUser = JSON.parse(localStorage.getItem("authUser"));
 
+    const updateInertiaRootClass = () => {
+        const dynamicClass = 'layout-menu-expanded';
+        document.documentElement.classList.add(dynamicClass);
+    }
 
     return (
         <>
@@ -14,7 +19,7 @@ const NavBar = () => {
                 <div className="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none">
                     <a className="nav-item nav-link px-0 me-xl-4" href="#" id="customButton"
                     >
-                        <i className="bx bx-menu bx-sm"></i>
+                        <i onClick={updateInertiaRootClass} className="bx bx-menu bx-sm"></i>
                     </a>
                 </div>
                 <div className="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
@@ -62,10 +67,10 @@ const NavBar = () => {
                                     <div className="dropdown-divider"></div>
                                 </li>
                                 <li>
-                                    <a className="dropdown-item" href="#">
+                                    <Link to='/user/profile' className="dropdown-item" >
                                         <i className="bx bx-user me-2"></i>
                                         <span className="align-middle">My Profile</span>
-                                    </a>
+                                    </Link>
                                 </li>
                                 <li>
                                     <a href="#" className="dropdown-item">
